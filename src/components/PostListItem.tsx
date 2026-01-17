@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { Link, useFocusEffect } from "expo-router";
 
 const videoSource =
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
@@ -26,6 +27,14 @@ export default function PostListItem() {
           <Ionicons name="heart" size={33} color="#fff" />
           <Text style={styles.interactionText}>{0}</Text>
         </TouchableOpacity>
+
+        <Link href="/">
+          <TouchableOpacity style={styles.interactionButton}>
+            <Ionicons name="chatbubble" size={30} color="#fff" />
+            <Text style={styles.interactionText}>{0}</Text>
+          </TouchableOpacity>
+        </Link>
+
       </View>
 
         
