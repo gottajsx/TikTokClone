@@ -35,6 +35,11 @@ export default function PostListItem() {
           </TouchableOpacity>
         </Link>
 
+        <TouchableOpacity style={styles.interactionButton} onPress={() => console.log('Share Pressed')}>
+           <Ionicons name="arrow-redo" size={33} color="#fff" />
+           <Text style={styles.interactionText}>{0}</Text>
+        </TouchableOpacity>
+
       </View>
 
         
