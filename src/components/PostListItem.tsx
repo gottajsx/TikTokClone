@@ -1,14 +1,18 @@
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { Post } from "@/types/types";
 import { Link, useFocusEffect } from "expo-router";
 
-const videoSource =
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+type VideoItemProps = {
+  postItem: Post;
+}
 
-export default function PostListItem() {
+export default function PostListItem({ postItem }: VideoItemProps) {
   const { height } = Dimensions.get('window');
-  const player = useVideoPlayer(videoSource, player => {
+  const { nrOfComments, description, user, video_url } = postItem;
+  
+  const player = useVideoPlayer(video_url, player => {
   player.loop = true;
   player.play();
 });
@@ -31,7 +35,7 @@ export default function PostListItem() {
         <Link href="/">
           <TouchableOpacity style={styles.interactionButton}>
             <Ionicons name="chatbubble" size={30} color="#fff" />
-            <Text style={styles.interactionText}>{0}</Text>
+            <Text style={styles.interactionText}>{nrOfComments[0]?.count || 0}</Text>
           </TouchableOpacity>
         </Link>
 
@@ -41,13 +45,13 @@ export default function PostListItem() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.avatar} onPress={() => console.log('Profile Pressed')}>
-           <Text style={styles.avatarText}>Username</Text>
+           <Text style={styles.avatarText}>{user?.username.charAt(0).toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.videoInfo}>
-        <Text style={styles.username}>Username</Text>
-        <Text style={styles.description}>Description text...</Text>
+        <Text style={styles.username}>{user.username}</Text>
+        <Text style={styles.description}>{description}</Text>
       </View>
         
     </View>
