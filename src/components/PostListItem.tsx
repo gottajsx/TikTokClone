@@ -3,19 +3,44 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from "@/types/types";
 import { Link, useFocusEffect } from "expo-router";
+import { useCallback, useEffect } from "react";
 
 type VideoItemProps = {
   postItem: Post;
+  isActive: boolean;
 }
 
-export default function PostListItem({ postItem }: VideoItemProps) {
+export default function PostListItem({ postItem, isActive }: VideoItemProps) {
   const { height } = Dimensions.get('window');
   const { nrOfComments, description, user, video_url } = postItem;
   
   const player = useVideoPlayer(video_url, player => {
-  player.loop = true;
-  player.play();
-});
+    player.loop = true;
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!player) return;
+
+      try {
+        if (isActive) {
+          player.play();
+        }
+      } catch (error) {
+        console.log(error);
+      }
+      
+      return () => {
+        try {
+          if (player && isActive) {
+            player.pause()
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    }, [isActive, player])
+  );
     
   return (
     <View style={{ height: height - 80 }}>
