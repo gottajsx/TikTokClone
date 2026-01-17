@@ -40,12 +40,17 @@ export default function PostListItem() {
            <Text style={styles.interactionText}>{0}</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.avatar} onPress={() => console.log('Profile Pressed')}>
+           <Text style={styles.avatarText}>Username</Text>
+        </TouchableOpacity>
       </View>
 
+      <View style={styles.videoInfo}>
+        <Text style={styles.username}>Username</Text>
+        <Text style={styles.description}>Description text...</Text>
+      </View>
         
     </View>
-
-    
   );
 };
 
