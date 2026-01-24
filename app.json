@@ -31,9 +31,12 @@
       "expo-router",
       "expo-video",
       "expo-camera",
-      {
-        "recordAudioAndroid": true
-      }
+      [
+        "expo-av",
+        {
+          "recordAudioAndroid": true
+        }
+      ]
     ]
   }
 }
