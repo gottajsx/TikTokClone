@@ -54,6 +54,11 @@ export const useAuthStore = create<AuthStore>()(
                         }
                     });
 
+                    if(error) {
+                        console.error("Supabase signUp error:", error.message, error);
+                        return;
+                    }
+
                     if (data && data.user && !error) {
                         const { user } = data;
 
@@ -69,6 +74,7 @@ export const useAuthStore = create<AuthStore>()(
                         })
                     };
                 } catch (error) {
+                    console.error("Unexpected error during register:", error);
                     throw error;
                 }
             },

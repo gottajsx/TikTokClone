@@ -50,6 +50,7 @@ export default function TabsLayout() {
                 name='profile' 
                 options={{
                     title: 'Profile',
+                    headerShown: false,
                     tabBarIcon: ({ color }) => (
                         <Feather name="user" size={24} color={color} />
                     )
