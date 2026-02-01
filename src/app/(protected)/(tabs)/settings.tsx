@@ -1,8 +1,19 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { 
+    View, 
+    Text, 
+    TouchableOpacity, 
+    StyleSheet, 
+    Alert, 
+    ScrollView,
+} from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function SettingsScreen() {
+    const [notifications, setNotifications] = useState(true);
+    const [messages, setMessages] = useState(true);
+
     const logout = useAuthStore((state) => state.logout);
 
     const handleLogout = async () => {
@@ -15,34 +26,101 @@ export default function SettingsScreen() {
         }
     };
 
+    const confirmLogout = () => {
+        Alert.alert(
+            "Se deconnecter",
+            "Es-tu sûr de vouloir te deconnecter ?",
+            [
+                { text: "Annuler", style: "cancel" },
+                { text: "Se déconnecter", style: "destructive", onPress: handleLogout },
+            ]
+        )
+    };
+
+    const confirmDeleteAccount = () => {
+        Alert.alert(
+            "Supprimer le compte",
+            "Cette action est irréversible.",
+            [
+                { text: "Annuler", style: "cancel" },
+                {
+                    text: "Supprimer",
+                    style: "destructive",
+                    onPress: () => {
+                        // supprimer compte database
+                    },
+                },
+            ]
+        );
+    };
+
     
     return(
-        <View style={styles.container}>
-            <TouchableOpacity style={styles.button} onPress={handleLogout}>
-                <Text style={styles.buttonText}>Se déconnecter</Text>
-            </TouchableOpacity>
-        </View>
+       <SafeAreaView style={styles.safe}>
+            <ScrollView style={styles.container}>
+
+                {/* HEADER */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => {}}>
+                         <Text style={styles.back}>←</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Paramètres</Text>
+                </View>
+            
+            </ScrollView>
+       </SafeAreaView> 
     );
 };
 
 const styles = StyleSheet.create({
+    safe: {
+        flex: 1,
+        backgroundColor: "#fff",
+    },
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#f2f2f2',
+        paddingHorizontal: 16,
     },
-    button: {
-        width: '100%',            // prend toute la largeur
-        paddingVertical: 15,
-        backgroundColor: '#ff3b30', // rouge "déconnexion"
-        borderRadius: 8,
-        alignItems: 'center',
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 10,
     },
-    buttonText: {
-        color: '#fff',
+    back: {
+        fontSize: 20,
+        marginRight: 12,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: "bold",
+    },
+    section: {
+        marginTop: 24,
+    },
+    sectionTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: "bold",
+        marginBottom: 12,
     },
-});
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 12,
+    },
+    dangerZone: {
+        marginTop: 40,
+        borderTopWidth: 1,
+        borderColor: "#eee",
+        paddingTop: 20,
+    },
+    logout: {
+        color: "#000",
+        fontWeight: "bold",
+        marginBottom: 16,
+    },
+    delete: {
+        color: "red",
+        fontWeight: "bold",
+    },
+    });

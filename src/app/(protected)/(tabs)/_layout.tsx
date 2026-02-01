@@ -56,6 +56,17 @@ export default function TabsLayout() {
                     )
                 }}
             />
+
+            <Tabs.Screen 
+                name='settings' 
+                options={{
+                    title: 'Settings',
+                    headerShown: false,
+                    tabBarIcon: ({ color }) => (
+                        <Feather name="user" size={24} color={color} />
+                    )
+                }}
+            />
         </Tabs>
     )
 };

@@ -14,6 +14,7 @@ import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VideoItem } from "@/types/types";
 import { router } from "expo-router";
+import { Link } from "expo-router"
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,7 +43,9 @@ export default function ProfileScreen() {
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Mon Profil</Text>
                     <TouchableOpacity>
-                        <Text style={styles.settings}>⚙️</Text>
+                        <Link href={"/settings"}>
+                            <Text style={styles.settings}>⚙️</Text>
+                        </Link>
                     </TouchableOpacity>
                 </View>
 
