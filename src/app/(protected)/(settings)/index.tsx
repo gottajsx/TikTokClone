@@ -4,11 +4,13 @@ import {
     Text, 
     TouchableOpacity, 
     StyleSheet, 
+    Switch,
     Alert, 
     ScrollView,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from '@/stores/useAuthStore';
+import { Link } from "expo-router";
 
 export default function SettingsScreen() {
     const [notifications, setNotifications] = useState(true);
@@ -62,10 +64,27 @@ export default function SettingsScreen() {
                 {/* HEADER */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => {}}>
-                         <Text style={styles.back}>←</Text>
+                         <Link href="profile"><Text style={styles.back}>←</Text></Link>
                     </TouchableOpacity>
                     <Text style={styles.title}>Paramètres</Text>
                 </View>
+
+                {/* NOTIFICATIONS */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Notifications</Text>
+                    
+                    <View style={styles.row}>
+                        <Text>Matches</Text>
+                        <Switch value={notifications} onValueChange={setNotifications} />
+                    </View>
+
+                    <View style={styles.row}>
+                        <Text>Messages</Text>
+                        <Switch value={messages} onValueChange={setMessages} />
+                    </View>
+                </View> 
+
+                {/* CONFIDENTIALITE */}          
             
             </ScrollView>
        </SafeAreaView> 

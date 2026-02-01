@@ -13,8 +13,8 @@ import {
 import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VideoItem } from "@/types/types";
-import { router } from "expo-router";
-import { Link } from "expo-router"
+import { useRouter } from "expo-router";
+import { Link } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -35,6 +35,8 @@ export default function ProfileScreen() {
         },
     ];
 
+    const router = useRouter();
+
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView style={styles.container}>
@@ -42,10 +44,8 @@ export default function ProfileScreen() {
                 {/* HEADER */}
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Mon Profil</Text>
-                    <TouchableOpacity>
-                        <Link href={"/settings"}>
+                    <TouchableOpacity onPress={() => router.push("/settings")}>
                             <Text style={styles.settings}>⚙️</Text>
-                        </Link>
                     </TouchableOpacity>
                 </View>
 
