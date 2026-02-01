@@ -33,3 +33,9 @@ export type NewCommentInput = {
   user_id: string
   comment: string
 }
+
+export type VideoItem = {
+  id: number;
+  uri: string;
+  thumbnail: string;
+};
