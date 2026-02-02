@@ -66,8 +66,20 @@ export default function SettingsScreen() {
                     <TouchableOpacity onPress={() => {}}>
                          <Link href="profile"><Text style={styles.back}>←</Text></Link>
                     </TouchableOpacity>
-                    <Text style={styles.title}>Paramètres</Text>
+                    <Text style={styles.title}>  Paramètres</Text>
+
                 </View>
+
+                <View style={styles.section}>
+                <TouchableOpacity
+                    style={styles.settingRow}
+                >
+                    <Text style={styles.settingTextBold}>Préférences</Text>
+                    <Text style={styles.chevron}>›</Text>
+                </TouchableOpacity>
+                </View>
+
+                
 
                 {/* NOTIFICATIONS */}
                 <View style={styles.section}>
@@ -84,8 +96,50 @@ export default function SettingsScreen() {
                     </View>
                 </View> 
 
-                {/* CONFIDENTIALITE */}          
-            
+                {/* CONFIDENTIALITE */} 
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Confidentialité</Text>
+                    <TouchableOpacity style={styles.row}>
+                        <Text>Profil visible</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.row}>
+                        <Text>Mode incognito</Text>
+                    </TouchableOpacity>
+                </View>     
+
+                {/* SÉCURITÉ */}  
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Sécurité</Text>
+                    <TouchableOpacity style={styles.row}>
+                        <Text>Changer mot de passe</Text>
+                    </TouchableOpacity>
+                    {/* <TouchableOpacity style={styles.row}>
+                        <Text>Compte vérifié</Text>
+                    </TouchableOpacity> */}
+                </View>  
+
+                {/* AIDE */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Support</Text>
+                    <TouchableOpacity style={styles.row}>
+                        <Text>Aide & FAQ</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.row}>
+                        <Text>Signaler un problème</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* ACTIONS COMPTE */}
+                 <View style={styles.dangerZone}>
+                    <TouchableOpacity onPress={confirmLogout}>
+                        <Text style={styles.logout}>🚪 Se déconnecter</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={confirmDeleteAccount}>
+                        <Text style={styles.delete}>🗑 Supprimer le compte</Text>
+                    </TouchableOpacity>
+                 </View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
        </SafeAreaView> 
     );
@@ -125,7 +179,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: 6,
     },
     dangerZone: {
         marginTop: 40,
@@ -142,4 +196,27 @@ const styles = StyleSheet.create({
         color: "red",
         fontWeight: "bold",
     },
+    settingRow: {
+    fontSize: 16,
+    fontWeight: "bold",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    //paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "#fff",
+  },
+  settingText: {
+    fontSize: 16,
+  },
+  settingTextBold: {
+    fontSize: 16,
+    fontWeight: "600", // ou "bold"
+  },
+  chevron: {
+    fontSize: 20,
+    color: "#999",
+  },
     });
