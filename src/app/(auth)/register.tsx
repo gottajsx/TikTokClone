@@ -1,20 +1,68 @@
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { 
+    Text, 
+    View, 
+    StyleSheet, 
+    TextInput, 
+    TouchableOpacity, 
+    Alert, 
+    KeyboardAvoidingView, 
+    Platform 
+} from "react-native";
 
 export default function Register() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [username, setUsername] = useState<string>('');
+
+    const [birthDate, setBirthDate] = useState<Date | null>(null);
+    const [showPicker, setShowPicker] = useState(false);
+
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLoading, setLoading] = useState<boolean>(false);
+
     const register = useAuthStore((state) => state.register);
 
+    const calculateAge = (birthDate: Date) => {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
     const handleRegister = async () => {
+        if (!acceptedTerms) {
+            Alert.alert(
+                "Conditions requises",
+                "Vous devez accepter les conditions d’utilisation pour continuer."
+            );
+            return;
+        }
+
         if (!email || !password || !username) {
             Alert.alert('Error', 'Please fill in all the fields');
             return;
         };
+
+        if (!birthDate) {
+            Alert.alert(
+                "Date de naissance requise",
+                "Veuillez sélectionner votre date de naissance."
+            );
+            return;
+        }
+
+        const age = calculateAge(birthDate);
+
+        if (age < 18) {
+            router.replace("/underage");
+            return;
+        }        
 
         try {
             setLoading(true);
@@ -58,6 +106,10 @@ export default function Register() {
                 onChangeText={setPassword}
                 secureTextEntry
             />
+
+            {/* DATE DE NAISSANCE */}
+
+            {/* CGU */}
 
             <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
                 <Text style={styles.buttonText}>{isLoading ? 'Creating Account...' : 'Create Account'}</Text>

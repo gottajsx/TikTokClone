@@ -1,7 +1,17 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { 
+  Text, 
+  View, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert, 
+  KeyboardAvoidingView, 
+  Platform 
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function Login() {
     const [email, setEmail] = useState<string>('');
