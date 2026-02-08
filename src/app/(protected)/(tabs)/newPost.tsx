@@ -1,18 +1,46 @@
-import { View, Text, Button, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import { useEffect, useRef, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  Button, 
+  StyleSheet, 
+  TouchableOpacity, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, Alert 
+} from 'react-native';
+import { 
+  CameraView, 
+  CameraType, 
+  useCameraPermissions, 
+  useMicrophonePermissions 
+} from 'expo-camera';
+import { 
+  useEffect, 
+  useRef, 
+  useState 
+} from 'react';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { 
+  useVideoPlayer, 
+  VideoView } 
+from 'expo-video';
+import * as ImagePicker from 'expo-image-picker';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/useAuthStore';
+import * as FileSystem from 'expo-file-system';
+import { createPost, uploadVideoToStorage } from '@/services/posts';
 
 export default function NewPostScreen() {
     const [facing, setFacing] = useState<CameraType>('back');
     const [isRecording, setIsRecording] = useState<boolean>(false);
     const [video, setVideo] = useState<string>();
     const [description, setDescription] = useState<string>('');
+    const user = useAuthStore((state) => state.user);
 
     const cameraRef = useRef<CameraView>(null);
+    const queryClient = useQueryClient();
 
     const [permission, requestPermission] = useCameraPermissions();
     const [micPermission, requestMicPermission] = useMicrophonePermissions();
@@ -20,6 +48,37 @@ export default function NewPostScreen() {
     const videoPlayer = useVideoPlayer(null, (player) => {
         player.loop = true;
     });
+
+    const { mutate: createNewPost, isPending } = useMutation({
+      mutationFn: async ({ video, description }: {video: string; description: string}) => {
+        const fileExtension = video.split('.').pop() || 'mp4';
+        const fileName = `${user?.id}/${Date.now()}.${fileExtension}`;
+
+        const file = new FileSystem.File(video);
+        const fileBuffer = await file.bytes();
+
+        const videoUrl = await uploadVideoToStorage({ fileName, fileExtension, fileBuffer });
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+        
+        await createPost({ 
+          video_url: videoUrl, 
+          description, 
+          user_id: user.id 
+        })
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['posts']});
+        videoPlayer.release();
+        setDescription('');
+        setVideo('');
+        router.replace('/');
+      },
+      onError: () => {
+        Alert.alert('Error', 'Something went wrong. Try again!');
+      }
+    })
 
     useEffect(() => {
         (async () => {
@@ -49,9 +108,33 @@ export default function NewPostScreen() {
 
     const toggleCameraFacing = () => setFacing(current => (current === 'back' ? 'front' : 'back'));
 
-    const selectFromGallery = () =>  {
-        // TODO
-    }
+    const selectFromGallery = async () =>  {
+        let result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['videos'],
+          allowsEditing: true,
+          aspect: [9, 16],
+        });
+
+        if (!result.canceled) {
+          const uri = result.assets[0].uri;
+          setVideo(uri);
+          await videoPlayer.replaceAsync(uri);
+          videoPlayer.play();
+        }
+    };
+
+    const dismissVideo = () => {
+      setVideo(undefined);
+      videoPlayer.release();
+    };
+
+    const postVideo = () => {
+      if (!video) {
+        Alert.alert('Error', 'No video selected');
+        return;
+      }
+      createNewPost({ video, description});
+    };
 
     const stopRecording = () => {
         setIsRecording(false);
@@ -93,6 +176,8 @@ export default function NewPostScreen() {
             </View>
         )
     };
+
+    
     
     return(
         <View>
