@@ -177,12 +177,53 @@ export default function NewPostScreen() {
         )
     };
 
-    
+    const renderRecorderVideo = () => {
+      return (
+        <View style={{ flex: 1 }}>
+          <Ionicons
+            name="close"
+            size={32}
+            color="white"
+            onPress={dismissVideo}
+            style={styles.closeIcon}
+          />
+
+          <View style={styles.videoWrapper}>
+            <VideoView
+              player={videoPlayer}
+              contentFit='cover'
+              style={styles.video}
+            />
+          </View>
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.descriptionContainer}
+            keyboardVerticalOffset={20}
+          >
+            <TextInput
+              style={styles.input}
+              placeholder="Add a description..."
+              placeholderTextColor="#aaa"
+              multiline
+              value={description}
+              onChangeText={setDescription}
+            />
+            <TouchableOpacity
+              style={styles.postButton}
+              onPress={postVideo}
+            >
+              <Text style={styles.postText}>Post</Text>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </View>
+      );
+    };
     
     return(
-        <View>
-            <Text>NewPostScreen</Text>
-        </View>
+      <>
+        {video ? renderRecorderVideo() : renderCamera()}
+      </>
     );
 };
 
