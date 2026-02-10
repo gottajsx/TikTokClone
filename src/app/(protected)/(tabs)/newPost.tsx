@@ -75,10 +75,14 @@ export default function NewPostScreen() {
         setVideo('');
         router.replace('/');
       },
-      onError: () => {
-        Alert.alert('Error', 'Something went wrong. Try again!');
-      }
-    })
+      onError: (error) => {
+        console.error('Mutation error:', error);
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Something went wrong'
+        );
+      },
+    });
 
     useEffect(() => {
         (async () => {
