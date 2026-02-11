@@ -1,10 +1,11 @@
+import * as FileSystem from 'expo-file-system';
 import { supabase } from "@/lib/supabase"
 import { PostInput } from "@/types/types";
 
 type StorageInput = {
     fileName: string;
     fileExtension: string;
-    fileBuffer: Uint8Array;
+    videoUri: string;
 };
 
 type Paginationinput = {
@@ -31,21 +32,85 @@ export const fetchPosts = async (pageParams: Paginationinput) => {
 }
 
 export const uploadVideoToStorage = async (storageProps: StorageInput) => {
-    const { fileName, fileExtension, fileBuffer } = storageProps;
+    const { fileName, fileExtension, videoUri } = storageProps;
+    const fullFileName = `${fileName}.${fileExtension}`;
+    console.log('📍 Video URI:', videoUri);
 
-    const { data, error } = await supabase.storage
-        .from('videos')
-        .upload(fileName, fileBuffer, {
-            contentType: `video/${fileExtension}`,
+    try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userSession = sessionData?.session;
+
+        if (!userSession) {
+             console.error('⚠️ User session missing. Upload blocked.');
+            throw new Error('User is not authenticated. Please log in.');
+        }
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData?.user) {
+                console.error('⚠️ Failed to get authenticated user:', userError);
+                throw new Error('Authenticated user not found. Upload blocked.');
+        }   
+
+       if (!videoUri) {
+            throw new Error('Video URI is missing');
+       }
+
+       if (!fileExtension) {
+            throw new Error('File extension is missing');
+       }
+
+       const fileToUpload = {
+            uri: videoUri,
+            name: fullFileName,
+            type: `video/${fileExtension}`,
+       } as any;
+
+        console.log('✅ File object created:', fileToUpload);
+
+        console.log('🚀 Uploading to Supabase bucket: videos');
+
+       const { data: uploadData, error: uploadError } =
+        await supabase.storage
+            .from('videos')
+            .upload(fullFileName, fileToUpload, {
+                contentType: `video/${fileExtension}`,
+                upsert: false,
+            });
+
+        if (uploadError) {
+            console.error('❌ Supabase upload error:', {
+                message: uploadError.message,
+                name: uploadError.name,
+                stack: uploadError.stack,
+            });
+            throw uploadError;
+        }
+
+        console.log('✅ Upload successful:', uploadData);
+
+        console.log('🔗 Generating public URL...');
+
+        const { data: publicUrlData } = supabase.storage
+            .from('videos')
+            .getPublicUrl(fullFileName);
+
+        if (!publicUrlData?.publicUrl) {
+            throw new Error('Failed to generate public URL');
+        }
+
+        console.log('✅ Public URL generated:', publicUrlData.publicUrl);
+
+        return publicUrlData.publicUrl;
+
+    } catch (error: any) {
+        console.error('🔥 Upload process failed at some stage:', {
+            message: error?.message,
+            stack: error?.stack,
+            raw: error,
         });
-    
-    if (error) throw error;
 
-    const { data: urlData } = supabase.storage  
-        .from('videos')
-        .getPublicUrl(fileName)
-
-    return urlData.publicUrl;
+        throw error;
+    }
 }
 
 export const createPost = async (newPosts: PostInput) => {

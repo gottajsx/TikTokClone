@@ -57,7 +57,11 @@ export default function NewPostScreen() {
         const file = new FileSystem.File(video);
         const fileBuffer = await file.bytes();
 
-        const videoUrl = await uploadVideoToStorage({ fileName, fileExtension, fileBuffer });
+        const videoUrl = await uploadVideoToStorage({ 
+          fileName, 
+          fileExtension, 
+          videoUri: video, 
+        });
         if (!user) {
           throw new Error('User not authenticated');
         }
