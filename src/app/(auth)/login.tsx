@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView, 
   Platform 
 } from "react-native";
+import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function Login() {
@@ -18,6 +19,8 @@ export default function Login() {
     const [password, setPassword] = useState<string>('');
     const [isLoading, setLoading] = useState<boolean>(false);
     const login = useAuthStore((state) => state.login);
+
+    const router = useRouter();
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -28,6 +31,9 @@ export default function Login() {
         try {
             setLoading(true);
             await login(email, password);
+
+            // Navigation vers la page protégée
+            router.replace("/(tabs)");
         } catch (error) {
             Alert.alert('Error', 'Login failed. Please try again');
         } finally {

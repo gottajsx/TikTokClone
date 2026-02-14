@@ -1,18 +1,48 @@
+import { Stack } from "expo-router";
+import { useRouter } from "expo-router";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Redirect, Stack } from "expo-router";
+import { useEffect } from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
+
 
 export default function ProtectedLayout() {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const router = useRouter();
+  const { isAuthenticated, loading } = useAuthStore();
 
-    if (!isAuthenticated) {
-        return <Redirect href={'/login'} />
-    };
+  // 🔐 Initialisation de la session
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace("/(auth)/login");
+    }
+  }, [loading, isAuthenticated]);
 
+  if (loading) {
     return (
-        <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }}/>
-            <Stack.Screen name="(settings)" options={{ headerShown: false }}/>
-            <Stack.Screen name="postComments/[id]" options={{ title: 'Comments', headerBackButtonDisplayMode: 'minimal' }} />
-        </Stack>
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
     );
-};
+  }
+
+  if (!isAuthenticated) return null; // on attend la redirection
+
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(settings)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="postComments/[id]"
+        options={{ title: "Comments", headerBackButtonDisplayMode: "minimal" }}
+      />
+    </Stack>
+  );
+}
+
+const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

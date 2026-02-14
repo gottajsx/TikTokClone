@@ -1,11 +1,12 @@
-import * as FileSystem from 'expo-file-system';
 import { supabase } from "@/lib/supabase"
+import { useAuthStore } from "@/stores/useAuthStore";
 import { PostInput } from "@/types/types";
 
 type StorageInput = {
     fileName: string;
     fileExtension: string;
     videoUri: string;
+    userId?: string; // facultatif, pour sécurité
 };
 
 type Paginationinput = {
@@ -32,64 +33,47 @@ export const fetchPosts = async (pageParams: Paginationinput) => {
 }
 
 export const uploadVideoToStorage = async (storageProps: StorageInput) => {
-    const { fileName, fileExtension, videoUri } = storageProps;
+    const { fileName, fileExtension, videoUri, userId } = storageProps;
     const fullFileName = `${fileName}.${fileExtension}`;
+    
     console.log('📍 Video URI:', videoUri);
 
     try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userSession = sessionData?.session;
+        // Validation initiale
+        if (!videoUri) throw new Error("Video URI is missing");
+        if (!fileExtension) throw new Error("File extension is missing");
+        if (!userId) throw new Error("User ID missing. Upload blocked.");
 
-        if (!userSession) {
-             console.error('⚠️ User session missing. Upload blocked.');
-            throw new Error('User is not authenticated. Please log in.');
-        }
-
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError || !userData?.user) {
-                console.error('⚠️ Failed to get authenticated user:', userError);
-                throw new Error('Authenticated user not found. Upload blocked.');
-        }   
-
-       if (!videoUri) {
-            throw new Error('Video URI is missing');
-       }
-
-       if (!fileExtension) {
-            throw new Error('File extension is missing');
-       }
-
-       const fileToUpload = {
+        const fileToUpload = {
             uri: videoUri,
             name: fullFileName,
             type: `video/${fileExtension}`,
-       } as any;
+        } as any;
 
         console.log('✅ File object created:', fileToUpload);
-
         console.log('🚀 Uploading to Supabase bucket: videos');
 
-       const { data: uploadData, error: uploadError } =
-        await supabase.storage
-            .from('videos')
-            .upload(fullFileName, fileToUpload, {
-                contentType: `video/${fileExtension}`,
-                upsert: false,
-            });
+        // Upload
+        const { data: uploadData, error: uploadError } =
+            await supabase.storage
+                .from('videos')
+                .upload(fullFileName, fileToUpload, {
+                    contentType: `video/${fileExtension}`,
+                    upsert: false,
+                });
 
-        if (uploadError) {
-            console.error('❌ Supabase upload error:', {
-                message: uploadError.message,
-                name: uploadError.name,
-                stack: uploadError.stack,
-            });
-            throw uploadError;
-        }
+            if (uploadError) {
+                console.error('❌ Supabase upload error:', {
+                    message: uploadError.message,
+                    name: uploadError.name,
+                    stack: uploadError.stack,
+                });
+                throw uploadError;
+            }
 
         console.log('✅ Upload successful:', uploadData);
 
-        console.log('🔗 Generating public URL...');
-
+        // Recuperation de l'URL publique
         const { data: publicUrlData } = supabase.storage
             .from('videos')
             .getPublicUrl(fullFileName);
@@ -108,7 +92,6 @@ export const uploadVideoToStorage = async (storageProps: StorageInput) => {
             stack: error?.stack,
             raw: error,
         });
-
         throw error;
     }
 }

@@ -51,34 +51,40 @@ export default function NewPostScreen() {
 
     const { mutate: createNewPost, isPending } = useMutation({
       mutationFn: async ({ video, description }: {video: string; description: string}) => {
+        // Récupère le user depuis le store
+        const { user } = useAuthStore.getState();
+        if (!user) {
+          throw new Error("User not authenticated. Please log in.");
+        }
+
+        // Extension et fileName
         const fileExtension = video.split('.').pop() || 'mp4';
-        const fileName = `${user?.id}/${Date.now()}.${fileExtension}`;
+        const fileName = `${user.id}/${Date.now()}`; // pas besoin d’extension ici
 
-        const file = new FileSystem.File(video);
-        const fileBuffer = await file.bytes();
-
+        // Upload video
         const videoUrl = await uploadVideoToStorage({ 
           fileName, 
           fileExtension, 
-          videoUri: video, 
+          videoUri: video,
+          userId: user.id, // obligatoire avec la nouvelle fonction
         });
-        if (!user) {
-          throw new Error('User not authenticated');
-        }
         
+        // Crée le post
         await createPost({ 
           video_url: videoUrl, 
           description, 
-          user_id: user.id 
-        })
+          user_id: user.id,
+        });
       },
+
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['posts']});
-        videoPlayer.release();
+        videoPlayer.release(); // au cas où videoPlayer n'existe pas
         setDescription('');
         setVideo('');
-        router.replace('/');
+        router.replace("/"); // redirection vers la racine
       },
+
       onError: (error) => {
         console.error('Mutation error:', error);
         Alert.alert(
