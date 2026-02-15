@@ -9,7 +9,8 @@ import {
     TouchableOpacity, 
     Alert, 
     KeyboardAvoidingView, 
-    Platform 
+    Platform,
+    Switch,
 } from "react-native";
 
 export default function Register() {
@@ -90,6 +91,7 @@ export default function Register() {
                 value={username}
                 onChangeText={setUsername}
             />
+
             <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -98,6 +100,7 @@ export default function Register() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
             />
+
             <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -110,9 +113,30 @@ export default function Register() {
             {/* DATE DE NAISSANCE */}
 
             {/* CGU */}
+            <View style={styles.termsContainer}>
+                <Switch
+                    value={acceptedTerms}
+                    onValueChange={setAcceptedTerms}
+                />
+                <Text style={styles.termsText}>
+                    J’accepte les{" "}
+                    <Link href="/terms">
+                        <Text style={styles.linkText}>conditions d’utilisation</Text>
+                    </Link>
+                </Text>
+            </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isLoading}>
-                <Text style={styles.buttonText}>{isLoading ? 'Creating Account...' : 'Create Account'}</Text>
+            <TouchableOpacity 
+                style={[
+                    styles.button,
+                    (!acceptedTerms || isLoading) && { opacity: 0.5 },
+                ]} 
+                onPress={handleRegister} 
+                disabled={isLoading || !acceptedTerms}
+            >
+                <Text style={styles.buttonText}>
+                    {isLoading ? 'Creating Account...' : 'Create Account'}
+                </Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -179,5 +203,17 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '600',
         fontSize: 15
-    }
+    },
+        termsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 15,
+    },
+
+    termsText: {
+        marginLeft: 10,
+        color: "#333",
+        flex: 1,
+        flexWrap: "wrap",
+    },
 });
