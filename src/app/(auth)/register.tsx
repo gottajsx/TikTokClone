@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Link, router } from "expo-router";
-import { useState } from "react";
+import { Link, router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { 
     Text, 
     View, 
@@ -14,10 +14,11 @@ import {
 } from "react-native";
 
 export default function Register() {
+    const { accepted } = useLocalSearchParams<{ accepted?: string }>();
+
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [username, setUsername] = useState<string>('');
-
     const [birthDate, setBirthDate] = useState<Date | null>(null);
     const [showPicker, setShowPicker] = useState(false);
 
@@ -25,6 +26,15 @@ export default function Register() {
     const [isLoading, setLoading] = useState<boolean>(false);
 
     const register = useAuthStore((state) => state.register);
+
+    useEffect(() => {
+        if (accepted === "true") {
+            setAcceptedTerms(true);
+
+            // Nettoie le param pour éviter qu'il reste dans l'URL
+            router.setParams({ accepted: undefined });
+        }
+    }, [accepted])
 
     const calculateAge = (birthDate: Date) => {
         const today = new Date();
