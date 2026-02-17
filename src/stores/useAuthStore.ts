@@ -5,13 +5,19 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 
 type AuthStore = {
+    // Auth
     user: User | null;
     isAuthenticated: boolean;
     loading: boolean;
+
     init: () => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, username: string) => Promise<void>;
     logout: () => Promise<void>;
+
+    // CGU
+    acceptedTerms: boolean;
+    setAcceptedTerms: (value: boolean) => void;    
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -21,6 +27,11 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: false,
             loading: true,
 
+            // CGU
+            acceptedTerms: false,
+            setAcceptedTerms: (value: boolean) => set({ acceptedTerms: value }),
+
+            // Auth
             init: async () => {
                 try {
                     const { data } = await supabase.auth.getSession();
@@ -99,3 +110,4 @@ export const useAuthStore = create<AuthStore>()(
         },
     ),
 );
+

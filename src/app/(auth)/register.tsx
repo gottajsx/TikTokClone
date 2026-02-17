@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Link, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { 
     Text, 
     View, 
@@ -12,29 +12,22 @@ import {
     Platform,
     Switch,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Register() {
-    const { accepted } = useLocalSearchParams<{ accepted?: string }>();
-
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [username, setUsername] = useState<string>('');
-    const [birthDate, setBirthDate] = useState<Date | null>(null);
-    const [showPicker, setShowPicker] = useState(false);
 
-    const [acceptedTerms, setAcceptedTerms] = useState(false);
-    const [isLoading, setLoading] = useState<boolean>(false);
+    const [birthDate, setBirthDate] = useState<Date | null>(null);
+    const [showPicker, setShowPicker] = useState(false);   
+    const [isLoading, setLoading] = useState(false);
+
+    const acceptedTerms = useAuthStore((state) => state.acceptedTerms);
+    const setAcceptedTerms = useAuthStore((state) => state.setAcceptedTerms);
 
     const register = useAuthStore((state) => state.register);
-
-    useEffect(() => {
-        if (accepted === "true") {
-            setAcceptedTerms(true);
-
-            // Nettoie le param pour éviter qu'il reste dans l'URL
-            router.setParams({ accepted: undefined });
-        }
-    }, [accepted])
 
     const calculateAge = (birthDate: Date) => {
         const today = new Date();
@@ -69,7 +62,6 @@ export default function Register() {
         }
 
         const age = calculateAge(birthDate);
-
         if (age < 18) {
             router.replace("/underage");
             return;
@@ -78,6 +70,7 @@ export default function Register() {
         try {
             setLoading(true);
             await register(email, password, username);
+            Alert.alert("Succès", "Compte créé !");
         } catch (error) {
             Alert.alert('Error', 'Register failed. Please try again');
         } finally {
@@ -86,80 +79,105 @@ export default function Register() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.container}
-        >   
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Sign up to get started</Text>
+         <SafeAreaView style={styles.safe}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1 }}
+            >   
+                <Text style={styles.title}>Create Account</Text>
+                <Text style={styles.subtitle}>Sign up to get started</Text>
 
 
-            <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor="#666"
-                value={username}
-                onChangeText={setUsername}
-            />
-
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#666"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
-
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#666"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-
-            {/* DATE DE NAISSANCE */}
-
-            {/* CGU */}
-            <View style={styles.termsContainer}>
-                <Switch
-                    value={acceptedTerms}
-                    onValueChange={setAcceptedTerms}
+                <TextInput
+                    style={styles.input}
+                    placeholder="Username"
+                    placeholderTextColor="#666"
+                    value={username}
+                    onChangeText={setUsername}
                 />
-                <Text style={styles.termsText}>
-                    J’accepte les{" "}
-                    <Link href="/terms">
-                        <Text style={styles.linkText}>conditions d’utilisation</Text>
-                    </Link>
-                </Text>
-            </View>
 
-            <TouchableOpacity 
-                style={[
-                    styles.button,
-                    (!acceptedTerms || isLoading) && { opacity: 0.5 },
-                ]} 
-                onPress={handleRegister} 
-                disabled={isLoading || !acceptedTerms}
-            >
-                <Text style={styles.buttonText}>
-                    {isLoading ? 'Creating Account...' : 'Create Account'}
-                </Text>
-            </TouchableOpacity>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    placeholderTextColor="#666"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                />
 
-            <View style={styles.footer}>
-                <Text style={styles.footerText}>Already have an account? </Text>
-                <Link href={"/login"}>
-                <Text style={styles.linkText}>Sign In</Text>
-                </Link>
-            </View>
-        </KeyboardAvoidingView>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#666"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+
+                {/* DATE DE NAISSANCE */}
+                <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setShowPicker(true)}
+                >
+                    <Text style={{ color: birthDate ? "#000" : "#666" }}>
+                        {birthDate
+                            ? birthDate.toLocaleDateString()
+                            : "Select your birth date"}
+                    </Text>
+                </TouchableOpacity>
+                
+                {showPicker && (
+                    <DateTimePicker
+                        value={birthDate || new Date(2000, 0, 1)}
+                        mode="date"
+                        display="default"
+                        maximumDate={new Date()}
+                        onChange={(event, selectedDate) => {
+                            setShowPicker(Platform.OS === "ios");
+                            if (selectedDate) setBirthDate(selectedDate);
+                        }}
+                    />
+                )}
+
+
+                {/* CGU */}
+                <View style={styles.termsContainer}>
+                    <Switch
+                        value={acceptedTerms}
+                        onValueChange={setAcceptedTerms}
+                    />
+                    <Text style={styles.termsText}>
+                        J’accepte les{" "}
+                        <Link href="/terms">
+                            <Text style={styles.linkText}>conditions d’utilisation</Text>
+                        </Link>
+                    </Text>
+                </View>
+
+                <TouchableOpacity 
+                    style={[styles.button, (!acceptedTerms || isLoading) && { opacity: 0.5 }]}
+                    onPress={handleRegister}
+                     disabled={!acceptedTerms || isLoading}
+                >
+                    <Text style={styles.buttonText}>
+                        {isLoading ? 'Creating Account...' : 'Create Account'}
+                    </Text>
+                </TouchableOpacity>
+                
+
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>Already have an account? </Text>
+                    <TouchableOpacity onPress={() => router.push("/login")}>
+                        <Text style={styles.linkText}>Sign In</Text>
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    safe: { flex: 1, backgroundColor: "#fff" },
     container: {
         flex: 1,
         justifyContent: 'center',
