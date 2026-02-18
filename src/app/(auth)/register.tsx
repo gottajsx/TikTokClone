@@ -1,5 +1,5 @@
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Link, router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import { 
     Text, 
@@ -11,6 +11,7 @@ import {
     KeyboardAvoidingView, 
     Platform,
     Switch,
+    Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -82,94 +83,108 @@ export default function Register() {
          <SafeAreaView style={styles.safe}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={styles.container}
+                style={styles.keyboard}
             >   
-                <Text style={styles.title}>Create Account</Text>
-                <Text style={styles.subtitle}>Sign up to get started</Text>
+                {/* CONTENU PRINCIPAL */}
+                <View style={styles.content}>
+                    <Text style={styles.title}>Create Account</Text>
+                    <Text style={styles.subtitle}>Sign up to get started</Text>
 
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Username"
-                    placeholderTextColor="#666"
-                    value={username}
-                    onChangeText={setUsername}
-                />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Username"
+                        placeholderTextColor="#666"
+                        value={username}
+                        onChangeText={setUsername}
+                    />
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    placeholderTextColor="#666"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        placeholderTextColor="#666"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                    />
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="#666"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor="#666"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
 
-                {/* DATE DE NAISSANCE */}
-                <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setShowPicker(true)}
-                >
-                    <Text style={{ color: birthDate ? "#000" : "#666" }}>
-                        {birthDate
-                            ? birthDate.toLocaleDateString()
-                            : "Select your birth date"}
-                    </Text>
-                </TouchableOpacity>
+                    {/* DATE DE NAISSANCE */}
+                    <TouchableOpacity
+                        style={styles.input}
+                        onPress={() => setShowPicker(true)}
+                    >
+                        <Text style={{ color: birthDate ? "#000" : "#666" }}>
+                            {birthDate
+                                ? birthDate.toLocaleDateString()
+                                : "Select your birth date"}
+                        </Text>
+                    </TouchableOpacity>
                 
-                {showPicker && (
-                    <DateTimePicker
-                        value={birthDate || new Date(2000, 0, 1)}
-                        mode="date"
-                        display="default"
-                        maximumDate={new Date()}
-                        onChange={(event, selectedDate) => {
-                            setShowPicker(Platform.OS === "ios");
-                            if (selectedDate) setBirthDate(selectedDate);
-                        }}
-                    />
-                )}
+                    {showPicker && (
+                        <DateTimePicker
+                            value={birthDate || new Date(2000, 0, 1)}
+                            mode="date"
+                            display="default"
+                            maximumDate={new Date()}
+                            onChange={(event, selectedDate) => {
+                                setShowPicker(Platform.OS === "ios");
+                                if (selectedDate) setBirthDate(selectedDate);
+                            }}
+                        />
+                    )}
 
 
-                {/* CGU */}
-                <View style={styles.termsContainer}>
-                    <Switch
-                        value={acceptedTerms}
-                        onValueChange={setAcceptedTerms}
-                    />
-                    <Text style={styles.termsText}>
-                        J’accepte les{" "}
-                        <Link href="/terms">
-                            <Text style={styles.linkText}> conditions d’utilisation</Text>
-                        </Link>
-                    </Text>
+                    {/* CGU */}
+                    <View style={styles.termsContainer}>
+                        <Switch
+                            value={acceptedTerms}
+                            onValueChange={setAcceptedTerms}
+                        />
+                         <View style={styles.termsTextContainer}>
+                            <Text style={styles.termsText}>J’accepte les </Text>
+                            <Pressable onPress={() => router.push("/terms")}>
+                                <Text style={styles.linkText}>
+                                    conditions d’utilisation
+                                </Text>
+                            </Pressable>
+                        </View>    
+                    </View>
+
+                    <TouchableOpacity 
+                        style={[styles.button, (!acceptedTerms || isLoading) && { opacity: 0.5 }]}
+                        onPress={handleRegister}
+                        disabled={!acceptedTerms || isLoading}
+                    >
+                        <Text style={styles.buttonText}>
+                            {isLoading ? 'Creating Account...' : 'Create Account'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity 
-                    style={[styles.button, (!acceptedTerms || isLoading) && { opacity: 0.5 }]}
-                    onPress={handleRegister}
-                     disabled={!acceptedTerms || isLoading}
-                >
-                    <Text style={styles.buttonText}>
-                        {isLoading ? 'Creating Account...' : 'Create Account'}
-                    </Text>
-                </TouchableOpacity>
-                
-
+                {/* FOOTER */}
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>Already have an account? </Text>
-                    <TouchableOpacity onPress={() => router.push("/login")}>
-                        <Text style={styles.linkText}>Sign In</Text>
-                    </TouchableOpacity>
+                    <Pressable onPress={() => router.push("/login")}>
+                        {({ pressed }) => (
+                            <Text
+                                style={[
+                                    styles.linkText,
+                                    pressed && { opacity: 0.6 },
+                                ]}
+                            >
+                                Sign In
+                            </Text>
+                        )}
+                    </Pressable>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -177,10 +192,17 @@ export default function Register() {
 };
 
 const styles = StyleSheet.create({
-    safe: { flex: 1,  justifyContent: 'center', },
-    container: {
-        justifyContent: 'center',
-        paddingHorizontal: 25
+    safe: { 
+        flex: 1,  
+        backgroundColor: "#000",
+    },
+    keyboard: {
+        flex: 1,
+    },
+    content: {
+        // flex: 1,
+        justifyContent: "center",
+        paddingHorizontal: 25,
     },
     title: {
         color: '#fff',
@@ -220,7 +242,7 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 25
+        marginTop: 35,
     },
     footerText: {
         color: '#999',
@@ -231,17 +253,20 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 15
     },
-        termsContainer: {
+    termsContainer: {
         flexDirection: "row",
         alignItems: "center",
         marginVertical: 15,
     },
-
+    termsTextContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+        marginLeft: 10,
+    },
     termsText: {
         marginLeft: 10,
-        // color: "#333",
         color: "#999",
-        flex: 1,
         flexWrap: "wrap",
     },
 });
