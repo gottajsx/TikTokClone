@@ -82,7 +82,7 @@ export default function Register() {
          <SafeAreaView style={styles.safe}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1 }}
+                style={styles.container}
             >   
                 <Text style={styles.title}>Create Account</Text>
                 <Text style={styles.subtitle}>Sign up to get started</Text>
@@ -149,7 +149,7 @@ export default function Register() {
                     <Text style={styles.termsText}>
                         J’accepte les{" "}
                         <Link href="/terms">
-                            <Text style={styles.linkText}>conditions d’utilisation</Text>
+                            <Text style={styles.linkText}> conditions d’utilisation</Text>
                         </Link>
                     </Text>
                 </View>
@@ -177,9 +177,8 @@ export default function Register() {
 };
 
 const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: "#fff" },
+    safe: { flex: 1,  justifyContent: 'center', },
     container: {
-        flex: 1,
         justifyContent: 'center',
         paddingHorizontal: 25
     },
@@ -240,7 +239,8 @@ const styles = StyleSheet.create({
 
     termsText: {
         marginLeft: 10,
-        color: "#333",
+        // color: "#333",
+        color: "#999",
         flex: 1,
         flexWrap: "wrap",
     },
