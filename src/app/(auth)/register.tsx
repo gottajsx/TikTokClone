@@ -30,6 +30,14 @@ export default function Register() {
 
     const register = useAuthStore((state) => state.register);
 
+    const formatDate = (date: Date) => {
+        return new Intl.DateTimeFormat("fr-FR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        }).format(date);
+    }
+
     const calculateAge = (birthDate: Date) => {
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
@@ -70,10 +78,12 @@ export default function Register() {
 
         try {
             setLoading(true);
-            await register(email, password, username);
-            Alert.alert("Succès", "Compte créé !");
-        } catch (error) {
-            Alert.alert('Error', 'Register failed. Please try again');
+            await register(email, password, username, birthDate);
+            // Alert.alert("Succès", "Compte créé !");
+            router.replace("/(protected)");
+
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Register failed. Please try again');
         } finally {
             setLoading(false);
         }
@@ -119,12 +129,15 @@ export default function Register() {
 
                     {/* DATE DE NAISSANCE */}
                     <TouchableOpacity
-                        style={styles.input}
+                        style={[
+                            styles.input,
+                            birthDate && { borderColor: "#FF0050" }
+                        ]}
                         onPress={() => setShowPicker(true)}
                     >
-                        <Text style={{ color: birthDate ? "#000" : "#666" }}>
+                        <Text style={{ color: birthDate ? "#fff" : "#666" }}>
                             {birthDate
-                                ? birthDate.toLocaleDateString()
+                                ? formatDate(birthDate)
                                 : "Select your birth date"}
                         </Text>
                     </TouchableOpacity>
@@ -136,8 +149,11 @@ export default function Register() {
                             display="default"
                             maximumDate={new Date()}
                             onChange={(event, selectedDate) => {
-                                setShowPicker(Platform.OS === "ios");
-                                if (selectedDate) setBirthDate(selectedDate);
+                                setShowPicker(false);
+                            
+                                if (selectedDate) {
+                                    setBirthDate(selectedDate);
+                                }
                             }}
                         />
                     )}

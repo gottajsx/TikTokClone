@@ -12,7 +12,7 @@ type AuthStore = {
 
     init: () => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string, username: string) => Promise<void>;
+    register: (email: string, password: string, username: string, birthDate: Date) => Promise<void>;
     logout: () => Promise<void>;
 
     // CGU
@@ -80,21 +80,55 @@ export const useAuthStore = create<AuthStore>()(
                 } 
             },
 
-            register: async (email: string, password: string, username: string) => {
+            register: async (email: string, password: string, username: string, birthDate: Date) => {
+                if (!birthDate) {
+                    console.error("birthDate is null");
+                    throw new Error("birthDate is required");
+                }
+                console.log("Trying to register:", { email, username, birthDate });
                 const { data, error } = await supabase.auth.signUp({
                         email,
                         password,
-                        options: { data: { username } },
+                        options: { 
+                            data: { 
+                                username,
+                                birth_date: birthDate.toISOString().split("T")[0], 
+                            },
+                        },
                     });
-                if (error) throw error;
-                if (data.user) {
-                    const user: User = {
-                        id: data.user.id,
-                        email: data.user.email!,
-                        username: data.user.user_metadata.username,
-                    };
-                    set({ user, isAuthenticated: true });
+                if (error) {
+                    console.error("Error during signUp:", error);
+                    throw error; // tu peux garder throw pour la UI
                 }
+                if (!data.user) {throw new Error("User not created");}
+                const userId = data.user.id;
+                console.log({userId, username, birthDate: birthDate?.toISOString().split("T")[0],});
+                const { error: profileError } = await supabase.from("profiles").insert([
+                    {
+                        id: userId,       // même id que auth.users
+                        username,
+                        birth_date: birthDate.toISOString().split("T")[0],
+                        profile_completion: 0,
+                        is_visible: true,
+                        is_incognito: false,
+                    },
+                ]);
+                if (profileError) throw profileError;
+                const { data: loginData, error: loginError } =
+                    await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
+                if (loginError) throw loginError;
+                if (!loginData.user) {
+                    throw new Error("Login failed");
+                }
+                 const user: User = {
+                    id: loginData.user.id,
+                    email: loginData.user.email!,
+                    username: loginData.user.user_metadata.username,
+                };
+                set({ user, isAuthenticated: true });
             },
 
             logout: async () => {
