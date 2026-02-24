@@ -1,113 +1,152 @@
-import { supabase } from '@/lib/supabase'
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Profile, Preferences } from '@/types/types';
+
+// ────────────────────────────────────────────────
+// Hook partagé pour l'utilisateur courant (cache + stale)
+const useCurrentUser = () => {
+  return useQuery({
+    queryKey: ['auth', 'current-user'],
+    queryFn: async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      if (!user) throw new Error('Utilisateur non authentifié');
+      return user;
+    },
+    staleTime: 5 * 60 * 1000, // 5 min
+    gcTime: 10 * 60 * 1000,
+  });
+};
 
 /**
- * Mutation pour mettre à jour le gender du profil
+ * Mutation : mettre à jour le gender du profil
  */
 export const useUpdateGender = () => {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
 
-    return useMutation({
-        mutationFn: async (gender: string) => {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser()
+  return useMutation({
+    mutationKey: ['update', 'gender'],
 
-        if (!user) throw new Error('User not authenticated')
+    mutationFn: async (
+      gender: 'male' | 'female' | 'non-binary' | null
+    ): Promise<Profile | null> => {
+      if (!user) throw new Error('Utilisateur non authentifié');
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({ gender })
-            .eq('id', user.id)
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ gender })
+        .eq('id', user.id)
+        .select()
+        .single();
 
-        if (error) throw error
-        },
+      if (error) throw error;
+      return data;
+    },
 
-        onSuccess: () => {
-        // On invalide le cache du profil connecté
-        queryClient.invalidateQueries({ queryKey: ['my-profile'] })
-        },
-    })
-}
+    onSuccess: (updatedProfile) => {
+      if (updatedProfile) {
+        // Mise à jour optimiste du cache
+        queryClient.setQueryData<Profile>(['my-profile'], updatedProfile);
+      }
+      // Invalidation pour refetch background si stale
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+    },
+
+    onError: (error) => {
+      console.error('[useUpdateGender] Erreur :', error);
+      // Tu peux ajouter ici un toast ou Alert si tu veux
+    },
+  });
+};
 
 /**
- * Mutation pour mettre à jour les gender_preferences
+ * Mutation : mettre à jour les gender_preferences (tableau)
  */
 export const useUpdateGenderPreferences = () => {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
 
-    return useMutation({
-        mutationFn: async (genderPreferences: string[]) => {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser()
+  return useMutation({
+    mutationKey: ['update', 'gender-preferences'],
 
-        if (!user) throw new Error('User not authenticated')
+    mutationFn: async (
+      genderPreferences: Array<'male' | 'female' | 'non-binary'>
+    ): Promise<Preferences | null> => {
+      if (!user) throw new Error('Utilisateur non authentifié');
 
-        const { error } = await supabase
-            .from('preferences')
-            .update({ gender_preferences: genderPreferences })
-            .eq('user_id', user.id)
+      const { data, error } = await supabase
+        .from('preferences')
+        .update({ gender_preferences: genderPreferences })
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-        if (error) throw error
-        },
+      if (error) throw error;
+      return data;
+    },
 
-        onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['my-preferences'] })
-        },
-    })
-}
+    onSuccess: (updatedPreferences) => {
+      if (updatedPreferences) {
+        queryClient.setQueryData<Preferences>(['my-preferences'], updatedPreferences);
+      }
+      queryClient.invalidateQueries({ queryKey: ['my-preferences'] });
+    },
 
-/**
- * Récupère le profil connecté
- */
-export const useMyProfile = (enabled: boolean) => {
-    return useQuery({
-        queryKey: ['my-profile'],
-        queryFn: async () => {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser()
-
-        if (!user) throw new Error('Not authenticated')
-
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single()
-
-        if (error) throw error
-
-        return data
-        },
-        enabled,
-    })
-}
+    onError: (error) => {
+      console.error('[useUpdateGenderPreferences] Erreur :', error);
+    },
+  });
+};
 
 /**
- * Récupère les préférences connectées
+ * Query : profil connecté
  */
-export const useMyPreferences = (enabled: boolean) => {
-    return useQuery({
-        queryKey: ['my-preferences'],
-        queryFn: async () => {
-        const {
-            data: { user },
-        } = await supabase.auth.getUser()
+export const useMyProfile = (enabled = true) => {
+  const { data: user } = useCurrentUser();
 
-        if (!user) throw new Error('Not authenticated')
+  return useQuery({
+    queryKey: ['my-profile'],
+    queryFn: async (): Promise<Profile | null> => {
+      if (!user) throw new Error('Non authentifié');
 
-        const { data, error } = await supabase
-            .from('preferences')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        if (error) throw error
+      if (error) throw error;
+      return data ?? null;
+    },
+    enabled: enabled && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
 
-        return data
-        },
-        enabled,
-    })
-}
+/**
+ * Query : préférences connectées
+ */
+export const useMyPreferences = (enabled = true) => {
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ['my-preferences'],
+    queryFn: async (): Promise<Preferences | null> => {
+      if (!user) throw new Error('Non authentifié');
+
+      const { data, error } = await supabase
+        .from('preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data ?? null;
+    },
+    enabled: enabled && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};

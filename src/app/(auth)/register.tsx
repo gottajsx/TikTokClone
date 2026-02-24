@@ -91,7 +91,7 @@ export default function Register() {
         try {
             setLoading(true);
             await register(email.trim(), password, username, birthDate);
-            router.replace("/(protected)");
+            router.replace("/(protected)/(tabs)");
         } catch (error: any) {
             Alert.alert("Erreur d'inscription", error.message || "L'inscription a échoué. Veuillez réessayer.");
         } finally {
