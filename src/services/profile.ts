@@ -46,38 +46,35 @@ export const useUpdateGender = () => {
 
     onSuccess: (updatedProfile) => {
       if (updatedProfile) {
-        // Mise à jour optimiste du cache
         queryClient.setQueryData<Profile>(['my-profile'], updatedProfile);
       }
-      // Invalidation pour refetch background si stale
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
     },
 
     onError: (error) => {
       console.error('[useUpdateGender] Erreur :', error);
-      // Tu peux ajouter ici un toast ou Alert si tu veux
     },
   });
 };
 
 /**
- * Mutation : mettre à jour les gender_preferences (tableau)
+ * Mutation : mettre à jour gender_preference (valeur unique)
  */
-export const useUpdateGenderPreferences = () => {
+export const useUpdateGenderPreference = () => {
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
 
   return useMutation({
-    mutationKey: ['update', 'gender-preferences'],
+    mutationKey: ['update', 'gender-preference'],
 
     mutationFn: async (
-      genderPreferences: Array<'male' | 'female' | 'non-binary'>
+      preference: 'male' | 'female' | 'non-binary' | null
     ): Promise<Preferences | null> => {
       if (!user) throw new Error('Utilisateur non authentifié');
 
       const { data, error } = await supabase
         .from('preferences')
-        .update({ gender_preferences: genderPreferences })
+        .update({ gender_preference: preference })
         .eq('user_id', user.id)
         .select()
         .single();
@@ -86,15 +83,15 @@ export const useUpdateGenderPreferences = () => {
       return data;
     },
 
-    onSuccess: (updatedPreferences) => {
-      if (updatedPreferences) {
-        queryClient.setQueryData<Preferences>(['my-preferences'], updatedPreferences);
+    onSuccess: (updated) => {
+      if (updated) {
+        queryClient.setQueryData<Preferences>(['my-preferences'], updated);
       }
       queryClient.invalidateQueries({ queryKey: ['my-preferences'] });
     },
 
     onError: (error) => {
-      console.error('[useUpdateGenderPreferences] Erreur :', error);
+      console.error('[useUpdateGenderPreference] Erreur :', error);
     },
   });
 };

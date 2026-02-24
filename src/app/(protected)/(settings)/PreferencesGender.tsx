@@ -10,43 +10,35 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useUpdateGenderPreferences } from '@/services/profile';
+import { useUpdateGenderPreference } from '@/services/profile';
 
 // Typage strict aligné sur ton ENUM
-type GenderPref = 'male' | 'female' | 'non-binary';
+type GenderPref = 'male' | 'female' | 'non-binary' | null;
 
 const genders: { label: string; value: GenderPref }[] = [
   { label: 'Hommes', value: 'male' },
   { label: 'Femmes', value: 'female' },
   { label: 'Non-binaires', value: 'non-binary' },
-  // Si tu veux garder "Autres" → ajoute-le ici et dans l'ENUM
-  // { label: 'Autres', value: 'other' },
+  { label: 'Peu importe', value: null }, // ← équivalent à "ne pas préciser"
 ];
 
 export default function PreferencesGenderScreen() {
-  const [selected, setSelected] = useState<GenderPref[]>([]);
-  const { mutate, isPending } = useUpdateGenderPreferences();
+  const [selected, setSelected] = useState<GenderPref | null>(null);
+  const { mutate, isPending } = useUpdateGenderPreference();
 
-  const toggleGender = (value: GenderPref) => {
-    setSelected((prev) =>
-      prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]
-    );
+  const handleSelect = (value: GenderPref) => {
+    setSelected(value);
   };
 
   const handleValidate = () => {
-    if (selected.length === 0) {
-      Alert.alert('Sélection requise', 'Choisis au moins une préférence.');
-      return;
-    }
-
     mutate(selected, {
       onSuccess: () => {
-        router.replace('/(protected)/(tabs)'); // ← route concrète
+        router.replace('/(protected)/(tabs)'); // route concrète
       },
       onError: (error: any) => {
         Alert.alert(
           'Erreur',
-          error?.message || 'Impossible de sauvegarder tes préférences. Réessaie.'
+          error?.message || 'Impossible de sauvegarder ta préférence. Réessaie.'
         );
       },
     });
@@ -59,18 +51,18 @@ export default function PreferencesGenderScreen() {
 
         {genders.map((gender) => (
           <TouchableOpacity
-            key={gender.value}
+            key={gender.value ?? 'none'}
             style={[
               styles.option,
-              selected.includes(gender.value) && styles.selectedOption,
+              selected === gender.value && styles.selectedOption,
             ]}
-            onPress={() => toggleGender(gender.value)}
+            onPress={() => handleSelect(gender.value)}
             activeOpacity={0.8}
           >
             <Text
               style={[
                 styles.optionText,
-                selected.includes(gender.value) && { color: '#fff' },
+                selected === gender.value && { color: '#fff' },
               ]}
             >
               {gender.label}
@@ -81,9 +73,11 @@ export default function PreferencesGenderScreen() {
         <TouchableOpacity
           style={[
             styles.button,
-            (selected.length === 0 || isPending) && styles.buttonDisabled,
+            (selected === null && selected !== null) || isPending
+              ? styles.buttonDisabled
+              : null,
           ]}
-          disabled={selected.length === 0 || isPending}
+          disabled={isPending}
           onPress={handleValidate}
           activeOpacity={0.8}
         >
