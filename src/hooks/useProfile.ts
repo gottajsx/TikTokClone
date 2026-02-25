@@ -1,8 +1,25 @@
-import { supabase } from '@/lib/supabase';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Profile } from '@/types/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from './useCurrentUser';
+import { getMyProfile, updateGender } from '@/services/profileService';
+import { Profile } from '@/types/types';
 
+/**
+ * Query : profil connecté
+ */
+export const useMyProfile = (enabled = true) => {
+  const { data: user } = useCurrentUser();
+
+  return useQuery({
+    queryKey: ['my-profile', user?.id],
+    queryFn: async (): Promise<Profile | null> => {
+      if (!user?.id) throw new Error('Non authentifié');
+      return getMyProfile(user.id);
+    },
+    enabled: enabled && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
 
 /**
  * Mutation : mettre à jour le gender du profil
@@ -17,24 +34,21 @@ export const useUpdateGender = () => {
     mutationFn: async (
       gender: 'male' | 'female' | 'non-binary' | null
     ): Promise<Profile | null> => {
-      if (!user) throw new Error('Utilisateur non authentifié');
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ gender })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      if (!user?.id) throw new Error('Utilisateur non authentifié');
+      return updateGender(user.id, gender);
     },
 
     onSuccess: (updatedProfile) => {
-      if (updatedProfile) {
-        queryClient.setQueryData<Profile>(['my-profile'], updatedProfile);
+      if (updatedProfile && user?.id) {
+        queryClient.setQueryData<Profile>(
+          ['my-profile', user.id],
+          updatedProfile
+        );
       }
-      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+
+      queryClient.invalidateQueries({
+        queryKey: ['my-profile', user?.id],
+      });
     },
 
     onError: (error) => {
@@ -42,30 +56,3 @@ export const useUpdateGender = () => {
     },
   });
 };
-
-/**
- * Query : profil connecté
- */
-export const useMyProfile = (enabled = true) => {
-  const { data: user } = useCurrentUser();
-
-  return useQuery({
-    queryKey: ['my-profile'],
-    queryFn: async (): Promise<Profile | null> => {
-      if (!user) throw new Error('Non authentifié');
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      return data ?? null;
-    },
-    enabled: enabled && !!user?.id,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-
