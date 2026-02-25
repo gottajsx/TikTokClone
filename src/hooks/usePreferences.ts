@@ -1,12 +1,8 @@
-import { supabase } from '@/lib/supabase';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Preferences } from '@/types/types';
 import { useCurrentUser } from './useCurrentUser';
+import { updateGenderPreference, getMyPreferences } from '@/services/preferencesService';
+import { Preferences } from '@/types/types';
 
-
-/**
- * Mutation : mettre à jour gender_preference (valeur unique)
- */
 export const useUpdateGenderPreference = () => {
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
@@ -19,22 +15,17 @@ export const useUpdateGenderPreference = () => {
     ): Promise<Preferences | null> => {
       if (!user) throw new Error('Utilisateur non authentifié');
 
-      const { data, error } = await supabase
-        .from('preferences')
-        .update({ gender_preference: preference })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return updateGenderPreference(user.id, preference);
     },
 
     onSuccess: (updated) => {
       if (updated) {
         queryClient.setQueryData<Preferences>(['my-preferences'], updated);
       }
-      queryClient.invalidateQueries({ queryKey: ['my-preferences'] });
+
+      queryClient.invalidateQueries({
+        queryKey: ['my-preferences'],
+      });
     },
 
     onError: (error) => {
@@ -52,18 +43,11 @@ export const useMyPreferences = (enabled = true) => {
   const { data: user } = useCurrentUser();
 
   return useQuery({
-    queryKey: ['my-preferences'],
+    queryKey: ['my-preferences', user?.id],
     queryFn: async (): Promise<Preferences | null> => {
-      if (!user) throw new Error('Non authentifié');
+      if (!user?.id) throw new Error('Non authentifié');
 
-      const { data, error } = await supabase
-        .from('preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      return data ?? null;
+      return getMyPreferences(user.id);
     },
     enabled: enabled && !!user?.id,
     staleTime: 5 * 60 * 1000,
