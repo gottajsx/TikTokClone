@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUpdateGenderPreference } from '@/hooks/usePreferences';
@@ -26,13 +27,25 @@ export default function OnboardingPreferencesGenderScreen() {
   const [selected, setSelected] = useState<GenderPref | null>(null);
   const { mutate, isPending } = useUpdateGenderPreference();
 
+  const queryClient = useQueryClient();
+
   const handleSelect = (value: GenderPref) => {
     setSelected(value);
   };
 
   const handleValidate = () => {
+    if (selected === null) {  // ← petite sécurité
+      Alert.alert('Sélection requise', 'Choisis une préférence');
+      return;
+    }
     mutate(selected, {
       onSuccess: () => {
+        console.log('Préférences sauvegardées avec succès');
+        
+        // Force le rafraîchissement IMMÉDIAT des données du layout
+        queryClient.invalidateQueries({ queryKey: ['myPreferences'] });
+        queryClient.refetchQueries({ queryKey: ['myPreferences'] });
+        // Redirection manuelle (remplace l'historique pour éviter back button bizarre)
         router.replace('/(protected)/(tabs)'); // route concrète
       },
       onError: (error: any) => {

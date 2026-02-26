@@ -3,7 +3,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from "@/types/types";
 import { Link, useFocusEffect } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type VideoItemProps = {
   postItem: Post;
@@ -16,39 +16,59 @@ export default function PostListItem({ postItem, isActive }: VideoItemProps) {
   
   const player = useVideoPlayer(video_url, player => {
     player.loop = true;
+    player.muted = false;
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!player) return;
+  // Ref pour éviter les appels après unmount (race condition Android)
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-      try {
-        if (isActive) {
-          player.play();
-        }
-      } catch (error) {
-        console.log(error);
-      }
-      
-      return () => {
+  useEffect(() => {   
+    if (!player) return;
+
+    if (isActive) {
+      if (isMountedRef.current) {
         try {
-          if (player && isActive) {
-            player.pause()
-          }
-        } catch (error) {
-          console.log(error);
+           player.play();
+        } catch (err) {
+          console.log('Play failed (unexpected):', err);
+        }  
+      }
+    } else {
+        if (isMountedRef.current) {
+          try {
+            player.pause();
+          } catch (err) {
+            console.log('Pause failed (unexpected):', err);
+          }  
         }
       }
-    }, [isActive, player])
-  );
+  }, [isActive, player]);
+
+  // Reset à 0s + play quand active
+  useEffect(() => {
+    if (isActive && player) {
+      try {
+        player.replay();
+      } catch(err) {
+        console.log('Replay failed (unexpected):', err);
+      }
+    }
+  }, [isActive, player]);
+
     
   return (
-    <View style={{ height: height - 80 }}>
+    <View style={{ height: height - 80, backgroundColor: '#000' }}>
       <VideoView 
-        style={{ flex: 1 }} 
+        style={StyleSheet.absoluteFill}
         player={player} 
         contentFit="cover" 
-        nativeControls={false} 
+        allowsPictureInPicture
       />
 
       <View style={styles.interactionBar}>

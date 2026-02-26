@@ -1,12 +1,12 @@
-import { Redirect, Stack, useSegments, usePathname } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useMyPreferences } from '@/hooks/usePreferences';
 import { useMyProfile } from '@/hooks/useProfile';
 import { View, ActivityIndicator, StyleSheet, Text, Button } from 'react-native';
+import { useMemo } from 'react';
 
 export default function ProtectedLayout() {
-  const segments = useSegments();
-  const pathname = usePathname(); // ← AJOUTÉ : beaucoup plus fiable que segments pour éviter les boucles
+  const pathname = usePathname();
 
   const { isAuthenticated, loading: authLoading } = useAuthStore();
 
@@ -24,20 +24,33 @@ export default function ProtectedLayout() {
     refetch: refetchPreferences,
   } = useMyPreferences(isAuthenticated);
 
-  const loading = authLoading || profileLoading || preferencesLoading;
-  const hasError = profileError || preferencesError;
+  const isLoading = authLoading || profileLoading || preferencesLoading;
+  const hasError = !!profileError || !!preferencesError;
 
-  // 1. Non authentifié → login
-  if (!isAuthenticated && !loading) {
+  const needs = useMemo(() => ({
+    gender: !profile?.gender,
+    preferences: !preferences?.gender_preference,
+  }), [profile, preferences]);
+
+  const currentPath = (pathname ?? '').toLowerCase();
+
+  const isOnGenderPage = currentPath.includes('onboardinggender');
+  const isOnPrefsPage = currentPath.includes('onboardingpreferencesgender');
+
+  // Si on est déjà sur une page d'onboarding valide → on ne montre JAMAIS le loader global
+  const isOnValidOnboarding = isOnGenderPage || isOnPrefsPage;
+
+  // 1. Auth guard
+  if (!isAuthenticated && !isLoading) {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // 2. Chargement
-  if (loading) {
+  // 2. Loader uniquement si PAS sur une page onboarding valide
+  if (isLoading && !isOnValidOnboarding) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.fullscreen}>
         <ActivityIndicator size="large" color="#FF0050" />
-        <Text style={styles.loadingText}>Chargement du profil...</Text>
+        <Text style={styles.text}>Vérification en cours...</Text>
       </View>
     );
   }
@@ -45,9 +58,9 @@ export default function ProtectedLayout() {
   // 3. Erreur
   if (hasError) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.fullscreen}>
         <Text style={styles.errorText}>
-          Impossible de charger votre profil ou préférences.
+          Impossible de charger les données. Veuillez réessayer.
         </Text>
         <Button
           title="Réessayer"
@@ -61,23 +74,33 @@ export default function ProtectedLayout() {
     );
   }
 
-  // 4. Onboarding forcé (la partie qui causait la boucle infinie)
-  const needsGender = !profile?.gender;
-  const needsPreferences = !preferences?.gender_preference;
-
-  // ← CORRECTION PRINCIPALE
-  // On ne redirige QUE si on n'est PAS déjà sur la bonne page d'onboarding
-  if (needsGender && !pathname?.includes('OnboardingGender')) {
+  // Guards onboarding – version renforcée pour éviter double trigger
+  if (needs.gender && !isOnGenderPage) {
     return <Redirect href="/(protected)/(onboarding)/OnboardingGender" />;
   }
 
-  if (!needsGender && needsPreferences && !pathname?.includes('OnboardingPreferencesGender')) {
+  // IMPORTANT : on ajoute une condition supplémentaire pour éviter le double appel
+  // → on ne redirige vers prefs QUE si on n'est pas déjà sur prefs ET que gender est OK
+  if (
+    !needs.gender &&
+    needs.preferences &&
+    !isOnPrefsPage &&
+    !isOnGenderPage  &&
+    !isLoading // ← déjà présent, mais renforce
+  ) {
+    console.log('[Layout] Redirection vers prefs car needs.preferences = true');
     return <Redirect href="/(protected)/(onboarding)/OnboardingPreferencesGender" />;
   }
 
-  // 5. Tout est OK → on rend le Stack (pas de redirect vers tabs ici, comme tu l'as voulu)
+  // Tout est validé → layout normal
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade_from_bottom',
+        animationDuration: 300,
+      }}
+    >
       <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       <Stack.Screen name="(preferences)" options={{ headerShown: false }} />
       <Stack.Screen name="(profile)" options={{ headerShown: false }} />
@@ -88,22 +111,23 @@ export default function ProtectedLayout() {
 }
 
 const styles = StyleSheet.create({
-  loaderContainer: {
+  fullscreen: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  loadingText: {
-    marginTop: 12,
+  text: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: '#333',
+    fontWeight: '500',
   },
   errorText: {
     fontSize: 16,
     color: '#FF0050',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     paddingHorizontal: 40,
   },
 });

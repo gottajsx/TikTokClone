@@ -1,8 +1,11 @@
-import { View, FlatList, Dimensions, ViewToken, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, FlatList, Dimensions, ViewToken, StyleSheet } from 'react-native';
 import PostListItem from "@/components/PostListItem";
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import FeedTab from '@/components/GenericComponents/FeedTab';
-import { useRef, useState } from 'react';
+import { useVideoPlayer, VideoPlayer } from 'expo-video';
+import { useRef, useState, useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import posts from "@assets/data/posts.json";
 
 const TABS = {
@@ -16,11 +19,67 @@ export default function HomeScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [activeTab, setActiveTab] = useState(TABS.FOR_YOU);
 
+    // Player UNIQUE partagé pour TOUTE la FlatList
+    const player = useVideoPlayer(null, (p) => {
+        p.loop = true;
+        p.muted = false; // ou true par défaut
+    });
+
+    // Ref pour éviter race conditions
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // Change la source du player quand currentIndex change
+    useEffect(() => {
+        const currentPost = posts[currentIndex];
+        if (currentPost?.video_url) {
+        player.replace(currentPost.video_url);
+        // Optionnel : preload la suivante si tu veux
+        // if (currentIndex + 1 < posts.length) player.replace(posts[currentIndex + 1].video_url, { preload: true });
+        }
+    }, [currentIndex, player]);
+
+    // Gestion globale play/pause quand le screen est focus/unfocus
+    useFocusEffect(
+        useCallback(() => {
+        if (isMountedRef.current) {
+            try {
+            player.play();
+            } catch (err) {
+            console.log('Global play failed:', err);
+            }
+        }
+        return () => {
+            if (isMountedRef.current) {
+            try {
+                player.pause();
+            } catch (err) {
+                console.log('Global pause failed:', err);
+            }
+            }
+        };
+        }, [player])
+    );
+
+    // Listener erreurs player (très utile pour debug)
+    useEffect(() => {
+        const sub = player.addListener('statusChange', (status) => {
+            if (status.error) {
+                console.log("Video error:", status.error);
+            }
+        });
+        return () => sub.remove();
+    }, [player]);
+
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems.length > 0) {
-            setCurrentIndex(viewableItems[0]?.index || 0)
+        const newIndex = viewableItems[0]?.index ?? 0;
+        setCurrentIndex(newIndex);
         }
-    })
+    });
 
     console.log("currentIndex:", currentIndex);
     return(
