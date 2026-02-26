@@ -14,7 +14,6 @@ import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VideoItem } from "@/types/types";
 import { useRouter } from "expo-router";
-import { Link } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 

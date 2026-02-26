@@ -2,7 +2,7 @@ import { View, FlatList, Dimensions, ViewToken, StyleSheet, ActivityIndicator, T
 import PostListItem from "@/components/PostListItem";
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import FeedTab from '@/components/GenericComponents/FeedTab';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import posts from "@assets/data/posts.json";
 
 const TABS = {

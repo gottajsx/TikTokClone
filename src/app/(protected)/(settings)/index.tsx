@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Link } from "expo-router";
+import { router} from "expo-router";
 
 export default function SettingsScreen() {
     const [notifications, setNotifications] = useState(true);
@@ -63,8 +63,8 @@ export default function SettingsScreen() {
 
                 {/* HEADER */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => {}}>
-                         <Link href="profile"><Text style={styles.back}>←</Text></Link>
+                    <TouchableOpacity onPress={() => router.back()}>
+                         <Text style={styles.back}>←</Text>
                     </TouchableOpacity>
                     <Text style={styles.title}>  Paramètres</Text>
 

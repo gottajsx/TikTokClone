@@ -33,7 +33,7 @@ export default function Login() {
             await login(email, password);
 
             // Navigation vers la page protégée
-            router.replace("/(tabs)");
+            router.replace("/(protected)/(tabs)/");
         } catch (error) {
             Alert.alert('Error', 'Login failed. Please try again');
         } finally {

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useUpdateGenderPreference } from '@/services/profile';
+import { useUpdateGenderPreference } from '@/hooks/usePreferences';
 
 // Typage strict aligné sur ton ENUM
 type GenderPref = 'male' | 'female' | 'non-binary' | null;

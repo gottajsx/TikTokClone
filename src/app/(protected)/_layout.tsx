@@ -1,10 +1,13 @@
-import { Redirect, Stack, useSegments } from 'expo-router';
+import { Redirect, Stack, useSegments, usePathname } from 'expo-router';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useMyProfile, useMyPreferences } from '@/services/profile';
+import { useMyPreferences } from '@/hooks/usePreferences';
+import { useMyProfile } from '@/hooks/useProfile';
 import { View, ActivityIndicator, StyleSheet, Text, Button } from 'react-native';
 
 export default function ProtectedLayout() {
   const segments = useSegments();
+  const pathname = usePathname(); // ← AJOUTÉ : beaucoup plus fiable que segments pour éviter les boucles
+
   const { isAuthenticated, loading: authLoading } = useAuthStore();
 
   const {
@@ -23,9 +26,6 @@ export default function ProtectedLayout() {
 
   const loading = authLoading || profileLoading || preferencesLoading;
   const hasError = profileError || preferencesError;
-
-  const inSettings = segments.includes('(settings)');
-  const currentScreen = segments[segments.length - 1]?.toLowerCase() || '';
 
   // 1. Non authentifié → login
   if (!isAuthenticated && !loading) {
@@ -61,22 +61,26 @@ export default function ProtectedLayout() {
     );
   }
 
-  // 4. Profil ou prefs manquants → onboarding (vérifie si déjà sur la bonne page)
+  // 4. Onboarding forcé (la partie qui causait la boucle infinie)
   const needsGender = !profile?.gender;
   const needsPreferences = !preferences?.gender_preference;
 
-  if (needsGender && !(inSettings && currentScreen === 'gender')) {
-    return <Redirect href="/(protected)/(settings)/Gender" />;
+  // ← CORRECTION PRINCIPALE
+  // On ne redirige QUE si on n'est PAS déjà sur la bonne page d'onboarding
+  if (needsGender && !pathname?.includes('OnboardingGender')) {
+    return <Redirect href="/(protected)/(onboarding)/OnboardingGender" />;
   }
 
-  if (!needsGender && needsPreferences && !(inSettings && currentScreen === 'preferencesgender')) {
-    return <Redirect href="/(protected)/(settings)/PreferencesGender" />;
+  if (!needsGender && needsPreferences && !pathname?.includes('OnboardingPreferencesGender')) {
+    return <Redirect href="/(protected)/(onboarding)/OnboardingPreferencesGender" />;
   }
 
-  // 5. Tout est OK → rends les onglets (ou settings si on y est déjà)
-  // Pas de redirect ici pour éviter boucle
+  // 5. Tout est OK → on rend le Stack (pas de redirect vers tabs ici, comme tu l'as voulu)
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+      <Stack.Screen name="(preferences)" options={{ headerShown: false }} />
+      <Stack.Screen name="(profile)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(settings)" options={{ headerShown: false }} />
     </Stack>
@@ -86,20 +90,19 @@ export default function ProtectedLayout() {
 const styles = StyleSheet.create({
   loaderContainer: {
     flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   loadingText: {
-    color: "#fff",
+    marginTop: 12,
     fontSize: 16,
-    marginTop: 16,
+    color: '#666',
   },
   errorText: {
-    color: "red",
     fontSize: 16,
-    textAlign: "center",
+    color: '#FF0050',
+    textAlign: 'center',
     marginBottom: 20,
     paddingHorizontal: 40,
   },

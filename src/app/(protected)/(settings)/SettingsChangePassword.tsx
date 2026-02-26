@@ -43,7 +43,7 @@ export default function SettingsChangePasswordScreen() {
     Alert.alert("Succès", "Mot de passe mis à jour");
 
     // 🔁 Redirection vers /settings
-    router.replace("/settings");
+    router.replace("/");
   };
 
   return (
