@@ -25,11 +25,27 @@ export const updateGender = async (
     .update({ gender })
     .eq('id', userId)
     .select()
-    .single();
+    .maybeSingle();  // ← accepte 0 ou 1 ligne
 
   if (error) {
-    console.error('[updateGender] Erreur Supabase :', error.message, error.code);
+    console.error('[updateGender] Erreur Supabase :', error);
     throw error;
+  }
+
+  // Si pas de ligne affectée → on crée la ligne
+  if (!data) {
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({ id: userId, gender })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('[updateGender] Erreur insert :', insertError);
+      throw insertError;
+    }
+
+    return newProfile;
   }
 
   return data;
