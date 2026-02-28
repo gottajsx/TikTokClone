@@ -11,11 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUpdateGender } from '@/hooks/useProfile';
-import type { Profile } from '@/types/types';
 
-type GenderType = NonNullable<Profile['gender']>; // 'male' | 'female' | 'non-binary'
+type GenderType = 'male' | 'female' | 'non-binary' | null;
 
-const genders: { label: string; value: GenderType | null }[] = [
+const genders: { label: string; value: GenderType }[] = [
   { label: 'Homme', value: 'male' },
   { label: 'Femme', value: 'female' },
   { label: 'Non-binaire', value: 'non-binary' },
@@ -27,14 +26,20 @@ export default function OnboardingGenderScreen() {
   const { mutate, isPending } = useUpdateGender();
 
   const handleValidate = () => {
+    if (selectedGender === null) {
+      Alert.alert('Sélection requise', 'Choisis ton genre pour continuer.');
+      return;
+    }
+
     mutate(selectedGender, {
       onSuccess: () => {
-        router.replace('/(protected)/(tabs)'); // ← route concrète pour éviter unmatched
+        console.log('Genre mis à jour → redirection vers prefs');
+        router.replace('/(protected)/(onboarding)/OnboardingPreferencesGender');
       },
       onError: (error: any) => {
         Alert.alert(
           'Erreur',
-          error?.message || 'Impossible de mettre à jour le genre. Réessayez.',
+          error?.message || 'Impossible de mettre à jour le genre. Réessayez.'
         );
       },
     });
@@ -69,11 +74,9 @@ export default function OnboardingGenderScreen() {
         <TouchableOpacity
           style={[
             styles.button,
-            (!selectedGender && selectedGender !== null) || isPending
-              ? styles.buttonDisabled
-              : null,
+            (selectedGender === null || isPending) && styles.buttonDisabled,
           ]}
-          disabled={isPending}
+          disabled={isPending || selectedGender === null}
           onPress={handleValidate}
           activeOpacity={0.8}
         >

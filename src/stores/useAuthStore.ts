@@ -11,7 +11,6 @@ export interface AppUser {
   id: string;
   email: string;
   username: string;
-  // Ajoute birth_date si tu l'utilises souvent : birth_date?: string;
 }
 
 interface AuthState {
@@ -20,7 +19,6 @@ interface AuthState {
   loading: boolean;
   acceptedTerms: boolean;
 
-  // Actions
   init: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -33,11 +31,10 @@ interface AuthState {
   setAcceptedTerms: (value: boolean) => void;
 }
 
-// Helper pour mapper Supabase User → AppUser
 const mapSupabaseUser = (sbUser: SupabaseUser): AppUser => ({
   id: sbUser.id,
-  email: sbUser.email!,
-  username: sbUser.user_metadata?.username as string || '',
+  email: sbUser.email ?? '',
+  username: (sbUser.user_metadata?.username as string) ?? '',
 });
 
 // ────────────────────────────────────────────────
@@ -51,11 +48,10 @@ export const useAuthStore = create<AuthState>()(
       loading: true,
       acceptedTerms: false,
 
-      setAcceptedTerms: (value: boolean) => set({ acceptedTerms: value }),
+      setAcceptedTerms: (value) => set({ acceptedTerms: value }),
 
       init: async () => {
         try {
-          // 1. Récupère la session actuelle
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session?.user) {
@@ -68,7 +64,6 @@ export const useAuthStore = create<AuthState>()(
             set({ loading: false });
           }
 
-          // 2. Écoute les changements d'auth (login, logout, refresh, etc.)
           supabase.auth.onAuthStateChange((_event, newSession) => {
             if (newSession?.user) {
               set({
@@ -84,7 +79,6 @@ export const useAuthStore = create<AuthState>()(
               });
             }
           });
-          // Pas de return → type Promise<void>
         } catch (error) {
           console.error('[AuthStore] Init failed:', error);
           set({ loading: false });
@@ -113,10 +107,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email: string, password: string, username: string, birthDate: Date) => {
+      register: async (
+        email: string,
+        password: string,
+        username: string,
+        birthDate: Date
+      ) => {
         if (!birthDate) throw new Error('Date de naissance requise');
 
         set({ loading: true });
+
         try {
           const formattedBirthDate = birthDate.toISOString().split('T')[0];
 
@@ -134,7 +134,6 @@ export const useAuthStore = create<AuthState>()(
           if (error) throw error;
           if (!data.user) throw new Error('Utilisateur non créé');
 
-          // Cas 1 : Auto-confirm activé → session déjà là
           if (data.session) {
             set({
               user: mapSupabaseUser(data.user),
@@ -144,10 +143,8 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          // Cas 2 : Confirm email requis → pas de session immédiate
-          // (l'utilisateur doit confirmer → le listener onAuthStateChange prendra le relais après confirmation)
           set({ loading: false });
-          // Option : Alert("Vérifiez votre email pour confirmer !")
+
         } catch (error: any) {
           set({ loading: false });
           console.error('[AuthStore] Register failed:', error);
@@ -156,6 +153,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        set({ loading: true });
         try {
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
@@ -163,24 +161,25 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             isAuthenticated: false,
+            loading: false,
           });
         } catch (error) {
           console.error('[AuthStore] Logout failed:', error);
+          set({ loading: false });
           throw error;
         }
       },
     }),
 
     {
-      name: 'auth-storage', // clé dans AsyncStorage
+      name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        // Persiste seulement ce qui est nécessaire et sérialisable
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         acceptedTerms: state.acceptedTerms,
       }),
-      // Version 2026 : onVersionMismatch ou onRehydrateStorage si besoin de migration
+      version: 1,
     }
   )
 );

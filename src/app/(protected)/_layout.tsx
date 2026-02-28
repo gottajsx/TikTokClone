@@ -1,98 +1,54 @@
-import { Redirect, Stack, usePathname } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useMyPreferences } from '@/hooks/usePreferences';
 import { useMyProfile } from '@/hooks/useProfile';
 import { View, ActivityIndicator, StyleSheet, Text, Button } from 'react-native';
-import { useMemo } from 'react';
 
 export default function ProtectedLayout() {
-  const pathname = usePathname();
-
   const { isAuthenticated, loading: authLoading } = useAuthStore();
 
-  const {
-    data: profile,
-    isLoading: profileLoading,
-    error: profileError,
-    refetch: refetchProfile,
-  } = useMyProfile(isAuthenticated);
+  const profileQuery = useMyProfile(isAuthenticated);
+  const preferencesQuery = useMyPreferences(isAuthenticated);
 
-  const {
-    data: preferences,
-    isLoading: preferencesLoading,
-    error: preferencesError,
-    refetch: refetchPreferences,
-  } = useMyPreferences(isAuthenticated);
+  const isLoading = authLoading || profileQuery.isLoading || preferencesQuery.isLoading;
+  const hasCriticalError = profileQuery.isError || preferencesQuery.isError;
 
-  const isLoading = authLoading || profileLoading || preferencesLoading;
-  const hasError = !!profileError || !!preferencesError;
-
-  const needs = useMemo(() => ({
-    gender: !profile?.gender,
-    preferences: !preferences?.gender_preference,
-  }), [profile, preferences]);
-
-  const currentPath = (pathname ?? '').toLowerCase();
-
-  const isOnGenderPage = currentPath.includes('onboardinggender');
-  const isOnPrefsPage = currentPath.includes('onboardingpreferencesgender');
-
-  // Si on est déjà sur une page d'onboarding valide → on ne montre JAMAIS le loader global
-  const isOnValidOnboarding = isOnGenderPage || isOnPrefsPage;
-
-  // 1. Auth guard
+  // 1. Pas authentifié → login
   if (!isAuthenticated && !isLoading) {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // 2. Loader uniquement si PAS sur une page onboarding valide
-  if (isLoading && !isOnValidOnboarding) {
+  // 2. Chargement initial → loader plein écran
+  if (isLoading) {
     return (
       <View style={styles.fullscreen}>
         <ActivityIndicator size="large" color="#FF0050" />
-        <Text style={styles.text}>Vérification en cours...</Text>
+        <Text style={styles.text}>Chargement de ton profil...</Text>
       </View>
     );
   }
 
-  // 3. Erreur
-  if (hasError) {
+  // 3. Erreur critique → écran d'erreur
+  if (hasCriticalError) {
     return (
       <View style={styles.fullscreen}>
         <Text style={styles.errorText}>
-          Impossible de charger les données. Veuillez réessayer.
+          Impossible de charger tes données. Veuillez réessayer.
         </Text>
         <Button
           title="Réessayer"
           color="#FF0050"
           onPress={() => {
-            refetchProfile();
-            refetchPreferences();
+            profileQuery.refetch();
+            preferencesQuery.refetch();
           }}
         />
       </View>
     );
   }
 
-  // Guards onboarding – version renforcée pour éviter double trigger
-  if (needs.gender && !isOnGenderPage) {
-    return <Redirect href="/(protected)/(onboarding)/OnboardingGender" />;
-  }
-
-  // IMPORTANT : on ajoute une condition supplémentaire pour éviter le double appel
-  // → on ne redirige vers prefs QUE si on n'est pas déjà sur prefs ET que gender est OK
-  if (
-    !needs.gender &&
-    needs.preferences &&
-    !isOnPrefsPage &&
-    !isOnGenderPage  &&
-    !isLoading // ← déjà présent, mais renforce
-  ) {
-    console.log('[Layout] Redirection vers prefs car needs.preferences = true');
-    return <Redirect href="/(protected)/(onboarding)/OnboardingPreferencesGender" />;
-  }
-
-  // Tout est validé → layout normal
+  // 4. Tout est OK → on rend le layout complet
+  // Les écrans d'onboarding gèrent leur propre logique de complétion
   return (
     <Stack
       screenOptions={{

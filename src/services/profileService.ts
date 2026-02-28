@@ -1,18 +1,19 @@
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/types';
 
-export const getMyProfile = async (
-  userId: string
-): Promise<Profile | null> => {
+export const getMyProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();  // ← retourne null si pas de ligne, sans erreur
 
-  if (error) throw error;
+  if (error) {
+    console.error('[getMyProfile] Erreur Supabase :', error.message, error.code);
+    throw error;
+  }
 
-  return data ?? null;
+  return data;
 };
 
 export const updateGender = async (
@@ -26,7 +27,10 @@ export const updateGender = async (
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[updateGender] Erreur Supabase :', error.message, error.code);
+    throw error;
+  }
 
   return data;
 };

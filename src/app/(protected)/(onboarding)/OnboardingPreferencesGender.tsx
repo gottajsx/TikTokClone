@@ -8,45 +8,38 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUpdateGenderPreference } from '@/hooks/usePreferences';
 
-// Typage strict aligné sur ton ENUM
+// Typage strict
 type GenderPref = 'male' | 'female' | 'non-binary' | null;
 
 const genders: { label: string; value: GenderPref }[] = [
   { label: 'Hommes', value: 'male' },
   { label: 'Femmes', value: 'female' },
   { label: 'Non-binaires', value: 'non-binary' },
-  { label: 'Peu importe', value: null }, // ← équivalent à "ne pas préciser"
+  { label: 'Peu importe', value: null },
 ];
 
 export default function OnboardingPreferencesGenderScreen() {
   const [selected, setSelected] = useState<GenderPref | null>(null);
   const { mutate, isPending } = useUpdateGenderPreference();
 
-  const queryClient = useQueryClient();
-
   const handleSelect = (value: GenderPref) => {
     setSelected(value);
   };
 
   const handleValidate = () => {
-    if (selected === null) {  // ← petite sécurité
-      Alert.alert('Sélection requise', 'Choisis une préférence');
+    if (selected === null) {
+      Alert.alert('Sélection requise', 'Choisis qui tu souhaites rencontrer.');
       return;
     }
+
     mutate(selected, {
       onSuccess: () => {
-        console.log('Préférences sauvegardées avec succès');
-        
-        // Force le rafraîchissement IMMÉDIAT des données du layout
-        queryClient.invalidateQueries({ queryKey: ['myPreferences'] });
-        queryClient.refetchQueries({ queryKey: ['myPreferences'] });
-        // Redirection manuelle (remplace l'historique pour éviter back button bizarre)
-        router.replace('/(protected)/(tabs)'); // route concrète
+        console.log('Préférences sauvegardées → redirection vers tabs');
+        router.replace('/(protected)/(tabs)'); // ou '/(protected)/(tabs)/index' si besoin
       },
       onError: (error: any) => {
         Alert.alert(
@@ -86,11 +79,9 @@ export default function OnboardingPreferencesGenderScreen() {
         <TouchableOpacity
           style={[
             styles.button,
-            (selected === null && selected !== null) || isPending
-              ? styles.buttonDisabled
-              : null,
+            (selected === null || isPending) && styles.buttonDisabled,
           ]}
-          disabled={isPending}
+          disabled={isPending || selected === null}
           onPress={handleValidate}
           activeOpacity={0.8}
         >
