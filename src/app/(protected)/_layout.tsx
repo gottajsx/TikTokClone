@@ -4,12 +4,13 @@ import { useMyPreferences } from '@/hooks/usePreferences';
 import { useMyProfile } from '@/hooks/useProfile';
 import { View, ActivityIndicator, StyleSheet, Text, Button } from 'react-native';
 
+// Define the latest terms version (update this as terms change; could be fetched from Supabase if dynamic)
+const LATEST_TERMS_VERSION = '1.0'; // e.g., '1.0', '2026-03-01', or whatever format matches your terms_version column
+
 export default function ProtectedLayout() {
   const { isAuthenticated, loading: authLoading } = useAuthStore();
-
   const profileQuery = useMyProfile(isAuthenticated);
   const preferencesQuery = useMyPreferences(isAuthenticated);
-
   const isLoading = authLoading || profileQuery.isLoading || preferencesQuery.isLoading;
   const hasCriticalError = profileQuery.isError || preferencesQuery.isError;
 
@@ -47,7 +48,15 @@ export default function ProtectedLayout() {
     );
   }
 
-  // 4. Tout est OK → on rend le layout complet
+  // 4. Vérification des CGU
+  const profile = profileQuery.data;
+  if (!profile?.terms_accepted_at || profile.terms_version !== LATEST_TERMS_VERSION) {
+    // Rediriger vers l'écran d'acceptation des CGU
+    // Vous pouvez passer des params si nécessaire, e.g., <Redirect href={{ pathname: '/(auth)/terms', params: { from: 'protected' } }} />
+    return <Redirect href="/(auth)/terms" />;
+  }
+
+  // 5. Tout est OK → on rend le layout complet
   // Les écrans d'onboarding gèrent leur propre logique de complétion
   return (
     <Stack
