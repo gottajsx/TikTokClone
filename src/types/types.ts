@@ -13,9 +13,8 @@ export type Profile = {
   gender: 'male' | 'female' | 'non-binary' | null;
   birth_date: string;            // date → string au format ISO 'YYYY-MM-DD'
   bio: string | null;            // text NULL
-  profile_completion: number | null;  // integer NULL (default 0)
-  is_visible: boolean | null;    // boolean NULL (default true)
-  is_incognito: boolean | null;  // boolean NULL (default false)
+  video_url?: string | null;
+  avatar_url?: string | null;
   created_at: string;            // timestamptz → string ISO avec timezone (ex: '2025-02-24T14:35:22.123+00')
   updated_at: string;            // idem
   terms_version?: string | null;        // ex: '1.0', '2025-01', etc.
@@ -33,6 +32,15 @@ export type Preferences = {
   created_at: string;            // timestamptz → string ISO avec timezone
 };
 
+export type Settings = {
+  user_id: string;             // uuid → string (clé primaire et FK vers profiles.id)
+  is_visible: boolean | null;    // boolean NULL (default true)
+  is_incognito: boolean | null;  // boolean NULL (default false)
+};
+
+/**
+ * Type représentant une ligne de la table public.settings
+ */
 export type Post = {
   id: string;
   video_url: string;
