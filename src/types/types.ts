@@ -38,6 +38,13 @@ export type Settings = {
   is_incognito: boolean | null;  // boolean NULL (default false)
 };
 
+export interface ActiveTerms {
+  version: string;
+  content: string;
+  created_at: string | null;
+}
+
+
 /**
  * Type représentant une ligne de la table public.settings
  */
