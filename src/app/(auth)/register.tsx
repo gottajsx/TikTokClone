@@ -10,7 +10,6 @@ import {
     Alert, 
     KeyboardAvoidingView, 
     Platform,
-    Switch,
     Pressable,
     ScrollView,
 } from "react-native";
@@ -25,7 +24,7 @@ export default function Register() {
     const [showPicker, setShowPicker] = useState(false);   
     const [isLoading, setLoading] = useState(false);
 
-    const { acceptedTerms, setAcceptedTerms, register } = useAuthStore();
+    const { register } = useAuthStore();
 
     const formatDate = useCallback((date: Date) => {
         return new Intl.DateTimeFormat("fr-FR", {
@@ -45,7 +44,7 @@ export default function Register() {
         return age;
     },  []);
 
-    const isFormValid = email && password.length >= 6 && username.length >= 3 && birthDate && acceptedTerms;
+    const isFormValid = email && password.length >= 6 && username.length >= 3 && birthDate;
 
     const validateEmail = (email: string) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,14 +52,6 @@ export default function Register() {
     };
 
     const handleRegister = async () => {
-        if (!acceptedTerms) {
-            Alert.alert(
-                "Conditions requises",
-                "Vous devez accepter les conditions d’utilisation pour continuer."
-            );
-            return;
-        }
-
         if (!email || !password || !username || !birthDate) {
             Alert.alert("Champs incomplets", "Veuillez remplir tous les champs.");
             return;
@@ -175,22 +166,6 @@ export default function Register() {
                         />
                         )}
 
-                        {/* Conditions d'utilisation */}
-                        <View style={styles.termsContainer}>
-                            <Switch
-                                value={acceptedTerms}
-                                onValueChange={setAcceptedTerms}
-                                trackColor={{ false: "#333", true: "#FF0050" }}
-                                thumbColor={acceptedTerms ? "#fff" : "#888"}
-                            />
-                            <View style={styles.termsTextContainer}>
-                                <Text style={styles.termsText}>J’accepte les </Text>
-                                <Pressable onPress={() => router.push("/terms")}>
-                                <Text style={styles.linkText}>conditions d’utilisation</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-
                         <TouchableOpacity
                             style={[
                                 styles.button,
@@ -293,21 +268,6 @@ const styles = StyleSheet.create({
   linkText: {
     color: "#FF0050",
     fontWeight: "700",
-    fontSize: 15,
-  },
-  termsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  termsTextContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginLeft: 12,
-  },
-  termsText: {
-    color: "#aaa",
     fontSize: 15,
   },
 });
