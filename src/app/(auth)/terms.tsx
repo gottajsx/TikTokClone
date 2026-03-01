@@ -16,21 +16,27 @@ import { useActiveTerms } from '@/hooks/useTerms';
 import { useAcceptTerms } from '@/hooks/useProfile';
 import { useAuthStore } from '@/stores/useAuthStore';
 
-// Styles personnalisés pour le Markdown (très important pour un beau rendu)
-const markdownStyles = {
+const markdownStyles = StyleSheet.create({
   heading1: {
     fontSize: 28,
-    fontWeight: '700' as const,      // ← ou 'bold' as const
+    fontWeight: '700',
     color: '#111',
     marginTop: 24,
     marginBottom: 16,
   },
   heading2: {
     fontSize: 22,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: '#222',
     marginTop: 20,
     marginBottom: 12,
+  },
+  heading3: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
   },
   paragraph: {
     fontSize: 16,
@@ -39,10 +45,10 @@ const markdownStyles = {
     marginBottom: 16,
   },
   strong: {
-    fontWeight: '700' as const,      // ← clé du problème
+    fontWeight: '700',
   },
   em: {
-    fontStyle: 'italic' as const,
+    fontStyle: 'italic',
   },
   bullet_list: {
     marginBottom: 12,
@@ -53,66 +59,61 @@ const markdownStyles = {
   list_item: {
     flexDirection: 'row',
     marginBottom: 8,
+    alignItems: 'flex-start',
   },
   bullet_list_icon: {
     fontSize: 16,
     marginRight: 8,
     color: '#FF0050',
+    marginTop: 6,
   },
   link: {
     color: '#FF0050',
-    textDecorationLine: 'underline' as const,
+    textDecorationLine: 'underline',
   },
-} as const;
+});
 
 export default function TermsScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
-  const {
-    data: terms,
-    isLoading: termsLoading,
-    isError: termsError,
-  } = useActiveTerms(isAuthenticated);
+  const { data: terms, isLoading: termsLoading, isError: termsError } = useActiveTerms(isAuthenticated);
 
-  const {
-    mutate: acceptTerms,
-    isPending: isAccepting,
-  } = useAcceptTerms();
+  const { mutateAsync: acceptTermsAsync, isPending: isAccepting } = useAcceptTerms();
 
-  const handleAccept = () => {
-    if (!terms?.version) return;
+  const handleAccept = async () => {
+    if (!terms?.version) {
+      Alert.alert('Erreur', 'Aucune version des conditions trouvée');
+      return;
+    }
 
-    acceptTerms(terms.version, {
-      onSuccess: () => {
-        router.replace('/(protected)/(tabs)'); // ou '/' ou le chemin de ta tab principale
-      },
-      onError: (error) => {
-        Alert.alert(
-          'Erreur',
-          'Impossible d’accepter les conditions. Veuillez réessayer.',
-          [{ text: 'OK' }]
-        );
-        console.error('Erreur acceptation CGU:', error);
-      },
-    });
+    try {
+      await acceptTermsAsync(terms.version);
+      // Petit délai pour laisser le cache se propager (souvent utile avec react-query + Supabase)
+      await new Promise(resolve => setTimeout(resolve, 400));
+      router.replace('/(protected)/(tabs)');
+    } catch (err: any) {
+      Alert.alert(
+        'Erreur',
+        err?.message || 'Impossible d’accepter les conditions. Veuillez réessayer.'
+      );
+    }
   };
 
   const handleDecline = () => {
     Alert.alert(
       'Attention',
-      'Vous devez accepter les conditions d’utilisation pour utiliser l’application.',
+      'Vous devez accepter les conditions d’utilisation pour continuer.',
       [{ text: 'OK' }]
     );
   };
 
-  // Gestion des liens cliquables dans le Markdown
-  const onLinkPress = (url: string) => {
+  const handleLinkPress = (url: string) => {
     Linking.canOpenURL(url).then(supported => {
       if (supported) {
         Linking.openURL(url);
       } else {
-        Alert.alert('Erreur', 'Impossible d’ouvrir le lien');
+        Alert.alert('Erreur', 'Impossible d’ouvrir ce lien');
       }
     });
   };
@@ -133,10 +134,10 @@ export default function TermsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
           <Text style={styles.errorText}>
-            Impossible de charger les conditions d'utilisation.
+            Impossible de charger les conditions d'utilisation
           </Text>
           <Text style={styles.errorSubText}>
-            Vérifiez votre connexion et réessayez.
+            Vérifiez votre connexion et réessayez
           </Text>
         </View>
       </SafeAreaView>
@@ -145,24 +146,19 @@ export default function TermsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête */}
       <View style={styles.header}>
         <Text style={styles.title}>Conditions Générales d'Utilisation</Text>
         <Text style={styles.version}>Version {terms.version}</Text>
-        <Text style={styles.date}>Mise à jour le 1er mars 2026</Text>
+        <Text style={styles.date}>En vigueur au 1er mars 2026</Text>
       </View>
 
-      {/* Contenu Markdown */}
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView style={styles.scroll}>
         <Markdown
           style={markdownStyles}
           rules={{
-            link: (node, children, parent, styles) => (
-              <TouchableOpacity
-                key={node.key}
-                onPress={() => onLinkPress(node.attributes.href)}
-              >
-                <Text style={styles.link}>{children}</Text>
+            link: (node, children) => (
+              <TouchableOpacity onPress={() => handleLinkPress(node.attributes.href)}>
+                <Text style={markdownStyles.link}>{children}</Text>
               </TouchableOpacity>
             ),
           }}
@@ -170,11 +166,9 @@ export default function TermsScreen() {
           {terms.content}
         </Markdown>
 
-        {/* Espace en bas pour ne pas que le bouton colle au texte */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Boutons d'action en bas */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.button, styles.declineButton]}
@@ -211,7 +205,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 26,
@@ -221,14 +214,14 @@ const styles = StyleSheet.create({
   version: {
     fontSize: 15,
     color: '#666',
-    marginTop: 4,
+    marginTop: 6,
   },
   date: {
     fontSize: 14,
     color: '#888',
-    marginTop: 2,
+    marginTop: 4,
   },
-  scrollContainer: {
+  scroll: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -259,7 +252,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     backgroundColor: '#fff',

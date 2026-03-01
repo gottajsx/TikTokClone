@@ -2,39 +2,47 @@ import { Redirect, Stack } from 'expo-router';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useMyPreferences } from '@/hooks/usePreferences';
 import { useMyProfile } from '@/hooks/useProfile';
+import { useActiveTermsVersion } from '@/hooks/useTerms'; // ← nouveau
 import { View, ActivityIndicator, StyleSheet, Text, Button } from 'react-native';
-
-// Define the latest terms version (update this as terms change; could be fetched from Supabase if dynamic)
-const LATEST_TERMS_VERSION = '1.0'; // e.g., '1.0', '2026-03-01', or whatever format matches your terms_version column
 
 export default function ProtectedLayout() {
   const { isAuthenticated, loading: authLoading } = useAuthStore();
   const profileQuery = useMyProfile(isAuthenticated);
   const preferencesQuery = useMyPreferences(isAuthenticated);
-  const isLoading = authLoading || profileQuery.isLoading || preferencesQuery.isLoading;
-  const hasCriticalError = profileQuery.isError || preferencesQuery.isError;
+  const termsVersionQuery = useActiveTermsVersion(isAuthenticated); // on active seulement si auth
+
+  const isLoading =
+    authLoading ||
+    profileQuery.isLoading ||
+    preferencesQuery.isLoading ||
+    termsVersionQuery.isLoading;
+
+  const hasCriticalError =
+    profileQuery.isError ||
+    preferencesQuery.isError ||
+    termsVersionQuery.isError;
 
   // 1. Pas authentifié → login
   if (!isAuthenticated && !isLoading) {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // 2. Chargement initial → loader plein écran
+  // 2. Chargement → loader
   if (isLoading) {
     return (
       <View style={styles.fullscreen}>
         <ActivityIndicator size="large" color="#FF0050" />
-        <Text style={styles.text}>Chargement de ton profil...</Text>
+        <Text style={styles.text}>Chargement...</Text>
       </View>
     );
   }
 
-  // 3. Erreur critique → écran d'erreur
+  // 3. Erreur critique
   if (hasCriticalError) {
     return (
       <View style={styles.fullscreen}>
         <Text style={styles.errorText}>
-          Impossible de charger tes données. Veuillez réessayer.
+          Impossible de charger les données nécessaires. Veuillez réessayer.
         </Text>
         <Button
           title="Réessayer"
@@ -42,22 +50,36 @@ export default function ProtectedLayout() {
           onPress={() => {
             profileQuery.refetch();
             preferencesQuery.refetch();
+            termsVersionQuery.refetch();
           }}
         />
       </View>
     );
   }
 
-  // 4. Vérification des CGU
+  // 4. Vérification CGU
   const profile = profileQuery.data;
-  if (!profile?.terms_accepted_at || profile.terms_version !== LATEST_TERMS_VERSION) {
-    // Rediriger vers l'écran d'acceptation des CGU
-    // Vous pouvez passer des params si nécessaire, e.g., <Redirect href={{ pathname: '/(auth)/terms', params: { from: 'protected' } }} />
+  const latestVersion = termsVersionQuery.data;
+
+  // Si pas de version active → on considère que c'est critique (ou tu peux fallback)
+  if (!latestVersion) {
+    return (
+      <View style={styles.fullscreen}>
+        <Text style={styles.errorText}>
+          Configuration des conditions d'utilisation non disponible.
+        </Text>
+      </View>
+    );
+  }
+
+  const needsToAcceptTerms =
+    !profile?.terms_accepted_at || profile.terms_version !== latestVersion;
+
+  if (needsToAcceptTerms) {
     return <Redirect href="/(auth)/terms" />;
   }
 
-  // 5. Tout est OK → on rend le layout complet
-  // Les écrans d'onboarding gèrent leur propre logique de complétion
+  // 5. Tout est OK
   return (
     <Stack
       screenOptions={{
