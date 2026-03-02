@@ -43,7 +43,7 @@ export default function HomeScreen() {
   }
 
   // Si gender OK mais gender_preference manquant → OnboardingPreferencesGender
-  if (!preferences?.gender_preference) {
+  if (!preferences || preferences.gender_preferences == null || preferences.gender_preferences.length === 0) {
     return <Redirect href="/(protected)/(onboarding)/OnboardingPreferencesGender" />;
   }
 
