@@ -12,7 +12,7 @@ export type GenderType = 'male' | 'female' | 'non-binary' | null;
 export type Profile = {
   id: string;                    // uuid → string (Supabase retourne les UUID sous forme de string)
   username: string;              // text NOT NULL + unique
-  gender_preferences: GenderType[] | null;
+  gender: 'male' | 'female' | 'non-binary' | null;
   birth_date: string;            // date → string au format ISO 'YYYY-MM-DD'
   bio: string | null;            // text NULL
   video_url?: string | null;
@@ -28,7 +28,7 @@ export type Profile = {
  */
 export type Preferences = {
   user_id: string;               // uuid → string (clé primaire et FK vers profiles.id)
-  gender_preference: 'male' | 'female' | 'non-binary' | null;
+  gender_preferences: GenderType[] | null;
   min_age: number | null;        // integer NULL (default 18)
   max_age: number | null;        // integer NULL (default 99)
   created_at: string;            // timestamptz → string ISO avec timezone
