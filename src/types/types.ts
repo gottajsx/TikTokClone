@@ -7,10 +7,12 @@ export type User = {
 /**
  * Type représentant une ligne de la table public.profiles
  */
+export type GenderType = 'male' | 'female' | 'non-binary' | null;
+
 export type Profile = {
   id: string;                    // uuid → string (Supabase retourne les UUID sous forme de string)
   username: string;              // text NOT NULL + unique
-  gender: 'male' | 'female' | 'non-binary' | null;
+  gender_preferences: GenderType[] | null;
   birth_date: string;            // date → string au format ISO 'YYYY-MM-DD'
   bio: string | null;            // text NULL
   video_url?: string | null;
