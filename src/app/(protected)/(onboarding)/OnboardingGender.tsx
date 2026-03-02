@@ -18,7 +18,6 @@ const genders: { label: string; value: GenderType }[] = [
   { label: 'Homme', value: 'male' },
   { label: 'Femme', value: 'female' },
   { label: 'Non-binaire', value: 'non-binary' },
-  { label: 'Ne pas préciser', value: null },
 ];
 
 export default function OnboardingGenderScreen() {
@@ -26,7 +25,6 @@ export default function OnboardingGenderScreen() {
   const { mutate, isPending } = useUpdateGender();
 
   const handleSelect = (value: GenderType) => {
-    // Toggle : si déjà sélectionné → on décoche
     if (selectedGender === value) {
       setSelectedGender(null);
     } else {
@@ -61,7 +59,6 @@ export default function OnboardingGenderScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Quel est ton genre ?</Text>
 
-        {/* Ajout d'un petit texte explicatif comme dans l'écran 2 */}
         <Text style={styles.explanation}>
           Choisis une option. Tu pourras toujours modifier ce choix plus tard.
         </Text>
@@ -131,7 +128,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 12,          // ← aligné sur fichier 2
+    marginBottom: 12,
     textAlign: 'center',
   },
   explanation: {
@@ -146,15 +143,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1c1c1e',
-    paddingVertical: 18,       // ← valeur du fichier 2
+    paddingVertical: 18,
     paddingHorizontal: 20,
     borderRadius: 16,
-    marginBottom: 12,          // ← plus proche du fichier 2
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#333',
   },
   selectedOption: {
-    backgroundColor: '#2a2a2e',   // ← exactement comme fichier 2
+    backgroundColor: '#2a2a2e',
     borderColor: '#FF0050',
   },
   checkbox: {
@@ -177,13 +174,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   optionText: {
-    color: '#ddd',             // ← couleur de base identique au fichier 2
+    color: '#ddd',
     fontSize: 18,
     fontWeight: '500',
   },
   selectedText: {
     color: '#fff',
-    fontWeight: '600',         // ← valeur du fichier 2
+    fontWeight: '600',
   },
   button: {
     marginTop: 'auto',

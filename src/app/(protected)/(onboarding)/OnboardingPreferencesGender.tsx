@@ -20,7 +20,6 @@ const genders: { label: string; value: GenderPref }[] = [
   { label: 'Hommes', value: 'male' },
   { label: 'Femmes', value: 'female' },
   { label: 'Non-binaires', value: 'non-binary' },
-  { label: 'Peu importe', value: null },
 ];
 
 export default function OnboardingPreferencesGenderScreen() {
