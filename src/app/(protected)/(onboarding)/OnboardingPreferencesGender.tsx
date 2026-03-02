@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useUpdateGenderPreference } from '@/hooks/usePreferences';
+import { useUpdateGenderPreferences } from '@/hooks/usePreferences';
+import { GenderType } from '@/types/types';
 
 // Typage strict
 type GenderPref = 'male' | 'female' | 'non-binary' | null;
@@ -23,52 +24,80 @@ const genders: { label: string; value: GenderPref }[] = [
 ];
 
 export default function OnboardingPreferencesGenderScreen() {
-  const [selected, setSelected] = useState<GenderPref | null>(null);
-  const { mutate, isPending } = useUpdateGenderPreference();
+  const [selected, setSelected] = useState<Set<GenderType>>(new Set());
+  const { mutate, isPending } = useUpdateGenderPreferences();
 
-  const handleSelect = (value: GenderPref) => {
-    setSelected(value);
+  const toggleGender = (value: GenderType) => {
+    setSelected((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(value)) {
+        newSet.delete(value);
+      } else {
+        newSet.add(value);
+      }
+      return newSet;
+    });
   };
 
   const handleValidate = () => {
-    if (selected === null) {
-      Alert.alert('Sélection requise', 'Choisis qui tu souhaites rencontrer.');
+    const selectedArray = Array.from(selected);
+
+    if (selectedArray.length === 0) {
+      Alert.alert('Sélection requise', 'Choisis au moins une préférence.');
       return;
     }
 
-    mutate(selected, {
+    mutate(selectedArray, {
       onSuccess: () => {
-        console.log('Préférences sauvegardées → redirection vers tabs');
-        router.replace('/(protected)/(tabs)'); // ou '/(protected)/(tabs)/index' si besoin
+        console.log('Préférences sauvegardées → redirection');
+        router.replace('/(protected)/(tabs)');
       },
       onError: (error: any) => {
         Alert.alert(
           'Erreur',
-          error?.message || 'Impossible de sauvegarder ta préférence. Réessaie.'
+          error?.message || 'Impossible de sauvegarder tes préférences. Réessaie.'
         );
       },
     });
   };
 
+  const isSelected = (value: GenderType) => selected.has(value);
+
+  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Qui souhaites-tu rencontrer ?</Text>
+        
+        {/* ← TEXTE EXPLICATIF AJOUTÉ ICI */}
+        <Text style={styles.explanation}>
+          Sélectionne une ou plusieurs options. Tu pourras toujours modifier tes préférences plus tard.
+        </Text>
 
         {genders.map((gender) => (
           <TouchableOpacity
-            key={gender.value ?? 'none'}
+            key={gender.value}
             style={[
               styles.option,
-              selected === gender.value && styles.selectedOption,
+              isSelected(gender.value) && styles.selectedOption,
             ]}
-            onPress={() => handleSelect(gender.value)}
+            onPress={() => toggleGender(gender.value)}
             activeOpacity={0.8}
           >
+            <View
+              style={[
+                styles.checkbox,
+                isSelected(gender.value) && styles.checkboxSelected,
+              ]}
+            >
+              {isSelected(gender.value) && <Text style={styles.check}>✓</Text>}
+            </View>
+
             <Text
               style={[
                 styles.optionText,
-                selected === gender.value && { color: '#fff' },
+                isSelected(gender.value) && styles.selectedText,
               ]}
             >
               {gender.label}
@@ -79,9 +108,9 @@ export default function OnboardingPreferencesGenderScreen() {
         <TouchableOpacity
           style={[
             styles.button,
-            (selected === null || isPending) && styles.buttonDisabled,
+            (selected.size === 0 || isPending) && styles.buttonDisabled,
           ]}
-          disabled={isPending || selected === null}
+          disabled={isPending || selected.size === 0}
           onPress={handleValidate}
           activeOpacity={0.8}
         >
@@ -111,27 +140,59 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 48,
+    marginBottom: 12,
     textAlign: 'center',
   },
+  explanation: {
+    color: '#aaa',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 36,
+    paddingHorizontal: 20,
+  },
   option: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1c1c1e',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#333',
   },
   selectedOption: {
+    backgroundColor: '#2a2a2e',
+    borderColor: '#FF0050',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#666',
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
     backgroundColor: '#FF0050',
     borderColor: '#FF0050',
+  },
+  check: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   optionText: {
     color: '#ddd',
     fontSize: 18,
     fontWeight: '500',
-    textAlign: 'center',
+  },
+  selectedText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   button: {
     marginTop: 'auto',
