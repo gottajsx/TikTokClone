@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   Alert,
   Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import { useRouter } from 'expo-router';
 import { useActiveTerms } from '@/hooks/useTerms';
