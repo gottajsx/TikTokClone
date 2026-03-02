@@ -26,6 +26,7 @@ export default function OnboardingGenderScreen() {
   const { mutate, isPending } = useUpdateGender();
 
   const handleSelect = (value: GenderType) => {
+    // Toggle : si déjà sélectionné → on décoche
     if (selectedGender === value) {
       setSelectedGender(null);
     } else {
@@ -41,7 +42,7 @@ export default function OnboardingGenderScreen() {
 
     mutate(selectedGender, {
       onSuccess: () => {
-        console.log('Genre mis à jour → redirection');
+        console.log('Genre mis à jour → redirection vers prefs');
         router.replace('/(protected)/(onboarding)/OnboardingPreferencesGender');
       },
       onError: (error: any) => {
@@ -53,38 +54,47 @@ export default function OnboardingGenderScreen() {
     });
   };
 
+  const isSelected = (value: GenderType) => selectedGender === value;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Quel est ton genre ?</Text>
 
-        {genders.map((gender) => {
-          const isSelected = selectedGender === gender.value;
+        {/* Ajout d'un petit texte explicatif comme dans l'écran 2 */}
+        <Text style={styles.explanation}>
+          Choisis une option. Tu pourras toujours modifier ce choix plus tard.
+        </Text>
 
-          return (
-            <TouchableOpacity
-              key={gender.value ?? 'none'}
-              style={styles.optionRow}
-              onPress={() => handleSelect(gender.value)}
-              activeOpacity={0.8}
+        {genders.map((gender) => (
+          <TouchableOpacity
+            key={gender.value ?? 'none'}
+            style={[
+              styles.option,
+              isSelected(gender.value) && styles.selectedOption,
+            ]}
+            onPress={() => handleSelect(gender.value)}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                isSelected(gender.value) && styles.checkboxSelected,
+              ]}
             >
-              {/* Checkbox */}
-              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                {isSelected && <View style={styles.checkboxInner} />}
-              </View>
+              {isSelected(gender.value) && <Text style={styles.check}>✓</Text>}
+            </View>
 
-              {/* Texte */}
-              <Text
-                style={[
-                  styles.optionText,
-                  isSelected && styles.selectedText,
-                ]}
-              >
-                {gender.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+            <Text
+              style={[
+                styles.optionText,
+                isSelected(gender.value) && styles.selectedText,
+              ]}
+            >
+              {gender.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
 
         <TouchableOpacity
           style={[
@@ -121,30 +131,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 48,
+    marginBottom: 12,          // ← aligné sur fichier 2
     textAlign: 'center',
   },
-
-  // Nouvelle structure : row avec checkbox + texte
-  optionRow: {
+  explanation: {
+    color: '#aaa',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 36,
+    paddingHorizontal: 20,
+  },
+  option: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1c1c1e',
-    paddingVertical: 20,
+    paddingVertical: 18,       // ← valeur du fichier 2
     paddingHorizontal: 20,
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 12,          // ← plus proche du fichier 2
     borderWidth: 1,
     borderColor: '#333',
   },
-
+  selectedOption: {
+    backgroundColor: '#2a2a2e',   // ← exactement comme fichier 2
+    borderColor: '#FF0050',
+  },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: '#666',
-    backgroundColor: 'transparent',
     marginRight: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -153,24 +171,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF0050',
     borderColor: '#FF0050',
   },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: '#fff',
-  },
-
-  optionText: {
+  check: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  optionText: {
+    color: '#ddd',             // ← couleur de base identique au fichier 2
     fontSize: 18,
     fontWeight: '500',
-    flex: 1, // pour prendre tout l'espace restant
   },
   selectedText: {
     color: '#fff',
-    fontWeight: '700',
+    fontWeight: '600',         // ← valeur du fichier 2
   },
-
   button: {
     marginTop: 'auto',
     backgroundColor: '#FF0050',
