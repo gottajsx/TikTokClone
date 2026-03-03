@@ -35,6 +35,10 @@ export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
+    useAuthStore.getState().init();
+  }, []);
+
+  useEffect(() => {
     const prepare = async () => {
       try {
         await init();
