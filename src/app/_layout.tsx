@@ -1,7 +1,7 @@
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
-import { Slot } from "expo-router";
+import { Slot, useRouter, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { View, ActivityIndicator, StyleSheet, Text } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -31,18 +31,30 @@ const myTheme = {
 };
 
 export default function RootLayout() {
-  const { loading, init } = useAuthStore();
+  const init = useAuthStore((s) => s.init);
+  const loading = useAuthStore((s) => s.loading);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [appReady, setAppReady] = useState(false);
+  const router = useRouter();
+  const segments = useSegments();
 
+  // ✅ Pour éviter de rediriger plusieurs fois
+  const hasRedirected = useRef(false);
+
+  // ✅ Init unique au montage
   useEffect(() => {
-    useAuthStore.getState().init();
+    const subscription = init();
+    return () => subscription?.unsubscribe();
   }, []);
 
+  // ✅ Cache le splash uniquement quand loading est false
+  // (session déjà restaurée dans le store)
   useEffect(() => {
+    if (loading) return;
+
     const prepare = async () => {
       try {
-        await init();
-        await new Promise((resolve) => setTimeout(resolve, 800)); // mini délai UX
+        await new Promise((resolve) => setTimeout(resolve, 800));
       } catch (e) {
         console.error("[Root] Prep error:", e);
       } finally {
@@ -52,7 +64,36 @@ export default function RootLayout() {
     };
 
     prepare();
-  }, [init]);
+  }, [loading]);
+
+  // ✅ Redirection UNIQUEMENT quand tout est prêt
+  // et qu'on a une valeur stable de isAuthenticated
+  useEffect(() => {
+    if (loading || !appReady) return;
+    if (hasRedirected.current) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    console.log("[Layout] isAuthenticated:", isAuthenticated);
+    console.log("[Layout] segments:", segments);
+    console.log("[Layout] inAuthGroup:", inAuthGroup);
+
+    if (!isAuthenticated && !inAuthGroup) {
+      console.log("[Layout] → redirect to login");
+      hasRedirected.current = true;
+      router.replace("/(auth)/login");
+    } else if (isAuthenticated && inAuthGroup) {
+      console.log("[Layout] → redirect to tabs");
+      hasRedirected.current = true;
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, loading, appReady, segments]);
+
+  // ✅ Reset du ref quand isAuthenticated change
+  // (permet de rediriger à nouveau après logout/login)
+  useEffect(() => {
+    hasRedirected.current = false;
+  }, [isAuthenticated]);
 
   if (loading || !appReady) {
     return (
