@@ -11,11 +11,13 @@ export default function ProtectedLayout() {
   const preferencesQuery = useMyPreferences(isAuthenticated);
   const termsVersionQuery = useActiveTermsVersion(isAuthenticated);
 
+  // ✅ isPending = true si disabled OU en cours de chargement
+  // contrairement à isLoading qui est false si la query est désactivée
   const isLoading =
     authLoading ||
-    profileQuery.isLoading ||
-    preferencesQuery.isLoading ||
-    termsVersionQuery.isLoading;
+    profileQuery.isPending ||
+    preferencesQuery.isPending ||
+    termsVersionQuery.isPending;
 
   const hasCriticalError =
     profileQuery.isError ||
@@ -60,8 +62,7 @@ export default function ProtectedLayout() {
   const profile = profileQuery.data;
   const latestVersion = termsVersionQuery.data;
 
-  // ✅ Guard : données pas encore disponibles malgré isLoading = false
-  // (cas de staleTime cache qui se revalide en arrière-plan)
+  // ✅ Guard : données pas encore disponibles malgré isPending = false
   if (!profile || latestVersion === undefined) {
     return (
       <View style={styles.fullscreen}>
@@ -71,9 +72,7 @@ export default function ProtectedLayout() {
     );
   }
 
-  // 4. Vérification CGU
-  // ✅ latestVersion === null signifie que la query a répondu
-  // mais qu'il n'y a pas de version active configurée
+  // 4. Pas de version CGU active configurée
   if (latestVersion === null) {
     return (
       <View style={styles.fullscreen}>
@@ -84,7 +83,8 @@ export default function ProtectedLayout() {
     );
   }
 
-  // ✅ On vérifie seulement quand les deux valeurs sont définies et non-null
+  // 5. Vérification CGU
+  // ✅ On vérifie seulement quand profile ET latestVersion sont définis et non-null
   const needsToAcceptTerms =
     !profile.terms_accepted_at ||
     profile.terms_version !== latestVersion;
@@ -93,7 +93,7 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/terms" />;
   }
 
-  // 5. Tout est OK
+  // 6. Tout est OK
   return (
     <Stack
       screenOptions={{

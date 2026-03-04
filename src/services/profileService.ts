@@ -6,7 +6,7 @@ export const getMyProfile = async (userId: string): Promise<Profile | null> => {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .maybeSingle();  // ← retourne null si pas de ligne, sans erreur
+    .maybeSingle();
 
   if (error) {
     console.error('[getMyProfile] Erreur Supabase :', error.message, error.code);
@@ -16,7 +16,7 @@ export const getMyProfile = async (userId: string): Promise<Profile | null> => {
   return data;
 };
 
-// Fonction dédiée pour accepter les CGU
+// ✅ upsert : update si existe, insert sinon — atomique et sans race condition
 export const acceptTerms = async (
   userId: string,
   currentVersion: string
@@ -25,73 +25,42 @@ export const acceptTerms = async (
 
   const { data, error } = await supabase
     .from('profiles')
-    .update({
-      terms_version: currentVersion,
-      terms_accepted_at: now,
-    })
-    .eq('id', userId)
+    .upsert(
+      {
+        id: userId,
+        terms_version: currentVersion,
+        terms_accepted_at: now,
+      },
+      { onConflict: 'id' }
+    )
     .select()
     .maybeSingle();
 
   if (error) {
-    console.error('[acceptTerms] Erreur Supabase :', error.message, error.code);
+    console.error('[acceptTerms] Erreur Supabase :', error.message);
     throw error;
-  }
-
-  // Si le profil n'existe pas encore → on le crée
-  if (!data) {
-    const { data: newProfile, error: insertError } = await supabase
-      .from('profiles')
-      .insert({
-        id: userId,
-        terms_version: currentVersion,
-        terms_accepted_at: now,
-        // gender: null, etc. si tu veux des valeurs par défaut
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('[acceptTerms] Erreur insert :', insertError);
-      throw insertError;
-    }
-
-    return newProfile;
   }
 
   return data;
 };
 
+// ✅ upsert : update si existe, insert sinon — atomique et sans race condition
 export const updateGender = async (
   userId: string,
   gender: 'male' | 'female' | 'non-binary' | null
 ): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from('profiles')
-    .update({ gender })
-    .eq('id', userId)
+    .upsert(
+      { id: userId, gender },
+      { onConflict: 'id' }
+    )
     .select()
-    .maybeSingle();  // ← accepte 0 ou 1 ligne
+    .maybeSingle();
 
   if (error) {
     console.error('[updateGender] Erreur Supabase :', error);
     throw error;
-  }
-
-  // Si pas de ligne affectée → on crée la ligne
-  if (!data) {
-    const { data: newProfile, error: insertError } = await supabase
-      .from('profiles')
-      .insert({ id: userId, gender })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('[updateGender] Erreur insert :', insertError);
-      throw insertError;
-    }
-
-    return newProfile;
   }
 
   return data;

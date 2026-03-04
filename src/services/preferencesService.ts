@@ -6,7 +6,7 @@ export const getMyPreferences = async (userId: string): Promise<Preferences | nu
     .from('preferences')
     .select('*')
     .eq('user_id', userId)
-    .maybeSingle();  // ← retourne null si pas de ligne, sans erreur
+    .maybeSingle();
 
   if (error) {
     console.error('[getMyPreferences] Erreur Supabase :', error.message, error.code);
@@ -15,8 +15,6 @@ export const getMyPreferences = async (userId: string): Promise<Preferences | nu
 
   return data;
 };
-
-
 
 export const updateGenderPreferences = async (
   userId: string,
@@ -32,10 +30,12 @@ export const updateGenderPreferences = async (
       { onConflict: 'user_id' }
     )
     .select()
-    .single();
+    // ✅ maybeSingle au lieu de single pour cohérence
+    // single() throw si 0 lignes, maybeSingle() retourne null
+    .maybeSingle();
 
   if (error) {
-    console.error('Erreur upsert gender_preferences :', error);
+    console.error('[updateGenderPreferences] Erreur upsert :', error);
     throw error;
   }
 
