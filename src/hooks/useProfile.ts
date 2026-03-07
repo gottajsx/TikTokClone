@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from './useCurrentUser';
 import { getMyProfile, updateGender, acceptTerms } from '@/services/profileService';
-import { Profile } from '@/types/types';
+import { Profile, RelationshipType } from '@/types/types';
 
 export const useMyProfile = (enabled = true) => {
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -94,3 +94,4 @@ export const useAcceptTerms = () => {
     },
   });
 };
+
