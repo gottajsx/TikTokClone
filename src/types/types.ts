@@ -9,6 +9,16 @@ export type User = {
  */
 export type GenderType = 'male' | 'female' | 'non-binary' | null;
 
+export type RelationshipType =
+  | 'serious'
+  | 'long_term_chill'
+  | 'open_enm'
+  | 'polyamory'
+  | 'casual'
+  | 'fwb'
+  | 'hookups'
+  | 'open_to_see';
+
 export type Profile = {
   id: string;                    // uuid → string (Supabase retourne les UUID sous forme de string)
   username: string;              // text NOT NULL + unique
@@ -31,7 +41,9 @@ export type Preferences = {
   gender_preferences: GenderType[] | null;
   min_age: number | null;        // integer NULL (default 18)
   max_age: number | null;        // integer NULL (default 99)
+  relation_type?: RelationshipType[] | null;
   created_at: string;            // timestamptz → string ISO avec timezone
+  updated_at: string;   
 };
 
 export type Settings = {
@@ -46,15 +58,7 @@ export interface ActiveTerms {
   created_at: string | null;
 }
 
-export type RelationshipType =
-  | 'serious'
-  | 'long_term_chill'
-  | 'open_enm'
-  | 'polyamory'
-  | 'casual'
-  | 'fwb'
-  | 'hookups'
-  | 'open_to_see';
+
 
 
 /**
