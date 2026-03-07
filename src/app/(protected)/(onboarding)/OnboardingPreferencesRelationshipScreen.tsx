@@ -6,27 +6,35 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useUpdateGenderPreferences } from '@/hooks/usePreferences';
-import { GenderType } from '@/types/types';
+// À adapter selon ton hook backend (quand tu le feras)
+import { useUpdateRelationshipPreferences } from '@/hooks/usePreferences'; // ← À créer
+import { RelationshipType } from '@/types/types'; // À définir
 
-// Typage strict
-type GenderPref = 'male' | 'female' | 'non-binary' | null;
-
-const genders: { label: string; value: GenderPref }[] = [
-  { label: 'Hommes', value: 'male' },
-  { label: 'Femmes', value: 'female' },
-  { label: 'Non-binaires', value: 'non-binary' },
+// Liste des options – 2026 vibe (inspiré Tinder/Hinge/Bumble/Feeld trends)
+const relationshipOptions: { label: string; value: RelationshipType }[] = [
+  { label: 'Relation sérieuse', value: 'serious' },
+  { label: 'Relation longue durée mais chill', value: 'long_term_chill' },
+  { label: 'Relation ouverte / ENM', value: 'open_enm' },
+  { label: 'Polyamour', value: 'polyamory' },
+  { label: 'Casual / léger', value: 'casual' },
+  { label: 'Sex friends / régulier', value: 'fwb' },
+  { label: 'Hookups / sans suite', value: 'hookups' },
+  // Option bonus très utilisée en 2025-2026 :
+  { label: 'Ouvert à explorer / je verrai', value: 'open_to_see' },
 ];
 
-export default function OnboardingPreferencesGenderScreen() {
-  const [selected, setSelected] = useState<Set<GenderType>>(new Set());
-  const { mutate, isPending } = useUpdateGenderPreferences();
+type RelationshipPref = typeof relationshipOptions[number]['value'] | null;
 
-  const toggleGender = (value: GenderType) => {
+export default function OnboardingPreferencesRelationshipScreen() {
+  const [selected, setSelected] = useState<Set<RelationshipType>>(new Set());
+  const { mutate, isPending } = useUpdateRelationshipPreferences(); // ← Ton futur hook
+
+  const toggleOption = (value: RelationshipType) => {
     setSelected((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(value)) {
@@ -42,64 +50,61 @@ export default function OnboardingPreferencesGenderScreen() {
     const selectedArray = Array.from(selected);
 
     if (selectedArray.length === 0) {
-      Alert.alert('Sélection requise', 'Choisis au moins une préférence.');
+      Alert.alert('Sélection requise', 'Choisis au moins une option.');
       return;
     }
 
     mutate(selectedArray, {
       onSuccess: () => {
-        console.log('Préférences sauvegardées → redirection');
-        router.replace('/(protected)/(onboarding)/OnboardingPreferencesRelationshipScreen');
+        console.log('Préférences relationnelles sauvegardées → redirection');
+        router.replace('/(protected)/(tabs)'); // Ou ta route de fin d’onboarding
       },
       onError: (error: any) => {
         Alert.alert(
           'Erreur',
-          error?.message || 'Impossible de sauvegarder tes préférences. Réessaie.'
+          error?.message || 'Impossible de sauvegarder. Réessaie.'
         );
       },
     });
   };
 
-  const isSelected = (value: GenderType) => selected.has(value);
-
-  
+  const isSelected = (value: RelationshipType) => selected.has(value);
 
   return (
     <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}>
       <View style={styles.content}>
-        <Text style={styles.title}>Qui souhaites-tu rencontrer ?</Text>
-        
-        {/* ← TEXTE EXPLICATIF AJOUTÉ ICI */}
+        <Text style={styles.title}>Quel type de relation recherches-tu ?</Text>
+
         <Text style={styles.explanation}>
-          Sélectionne une ou plusieurs options. Tu pourras toujours modifier tes préférences plus tard.
+          Sélectionne une ou plusieurs options. Tu pourras changer ça quand tu veux plus tard.
         </Text>
 
-        {genders.map((gender) => (
+        {relationshipOptions.map((option) => (
           <TouchableOpacity
-            key={gender.value}
+            key={option.value}
             style={[
               styles.option,
-              isSelected(gender.value) && styles.selectedOption,
+              isSelected(option.value) && styles.selectedOption,
             ]}
-            onPress={() => toggleGender(gender.value)}
+            onPress={() => toggleOption(option.value)}
             activeOpacity={0.8}
           >
             <View
               style={[
                 styles.checkbox,
-                isSelected(gender.value) && styles.checkboxSelected,
+                isSelected(option.value) && styles.checkboxSelected,
               ]}
             >
-              {isSelected(gender.value) && <Text style={styles.check}>✓</Text>}
+              {isSelected(option.value) && <Text style={styles.check}>✓</Text>}
             </View>
-
             <Text
               style={[
                 styles.optionText,
-                isSelected(gender.value) && styles.selectedText,
+                isSelected(option.value) && styles.selectedText,
               ]}
             >
-              {gender.label}
+              {option.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -120,6 +125,7 @@ export default function OnboardingPreferencesGenderScreen() {
           )}
         </TouchableOpacity>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
