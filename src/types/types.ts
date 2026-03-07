@@ -46,6 +46,16 @@ export interface ActiveTerms {
   created_at: string | null;
 }
 
+export type RelationshipType =
+  | 'serious'
+  | 'long_term_chill'
+  | 'open_enm'
+  | 'polyamory'
+  | 'casual'
+  | 'fwb'
+  | 'hookups'
+  | 'open_to_see';
+
 
 /**
  * Type représentant une ligne de la table public.settings
