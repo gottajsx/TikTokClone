@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Profile } from '@/types/types';
+import { Profile, RelationshipType } from '@/types/types';
 
 export const getMyProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
@@ -60,6 +60,30 @@ export const updateGender = async (
 
   if (error) {
     console.error('[updateGender] Erreur Supabase :', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateRelationshipPreferences = async (
+  userId: string,
+  preferences: RelationshipType[] | null
+): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(
+      { 
+        id: userId, 
+        relation_type: preferences  // ← tableau direct, Supabase gère text[]
+      },
+      { onConflict: 'id' }
+    )
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('[updateRelationshipPreferences] Erreur Supabase :', error.message, error.details);
     throw error;
   }
 
