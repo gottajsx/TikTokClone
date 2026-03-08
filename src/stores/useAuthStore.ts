@@ -178,6 +178,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             loading: false,
+            acceptedTerms: false,
           });
         } catch (error) {
           console.error("[AuthStore] Logout failed:", error);

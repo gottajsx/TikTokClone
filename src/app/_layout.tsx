@@ -47,6 +47,16 @@ export default function RootLayout() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  // ✅ Vide le cache React Query à chaque déconnexion
+  // pour éviter qu'un nouvel utilisateur hérite du cache du précédent
+  const prevAuthenticated = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (prevAuthenticated.current === true && !isAuthenticated) {
+      queryClient.clear();
+    }
+    prevAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated]);
+
   // ✅ Cache le splash uniquement quand loading est false
   // (session déjà restaurée dans le store)
   useEffect(() => {
