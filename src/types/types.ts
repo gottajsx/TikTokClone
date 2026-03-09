@@ -25,6 +25,8 @@ export type Profile = {
   gender: 'male' | 'female' | 'non-binary' | null;
   birth_date: string;            // date → string au format ISO 'YYYY-MM-DD'
   bio: string | null;            // text NULL
+  town: string | null;
+  country: string | null;
   video_url?: string | null;
   avatar_url?: string | null;
   created_at: string;            // timestamptz → string ISO avec timezone (ex: '2025-02-24T14:35:22.123+00')
