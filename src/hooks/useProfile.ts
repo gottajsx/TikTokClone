@@ -1,7 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { 
+  useQuery, 
+  useMutation, 
+  useQueryClient, 
+} from '@tanstack/react-query';
 import { useCurrentUser } from './useCurrentUser';
-import { getMyProfile, updateGender, acceptTerms } from '@/services/profileService';
-import { Profile, RelationshipType } from '@/types/types';
+import { 
+  getMyProfile, 
+  updateGender, 
+  acceptTerms, 
+  updateProfileBio, 
+} from '@/services/profileService';
+import { Profile } from '@/types/types';
 
 export const useMyProfile = (enabled = true) => {
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -95,3 +104,39 @@ export const useAcceptTerms = () => {
   });
 };
 
+export const useUpdateProfileBio = () => {
+  const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+
+  return useMutation({
+    mutationKey: ['update', 'profile-bio'],
+    mutationFn: async (bio: string | null): Promise<Profile> => {
+      if (!user?.id) throw new Error('Utilisateur non authentifié');
+      const updated = await updateProfileBio(user.id, bio);
+      if (!updated) throw new Error('Aucun profil retourné');
+      return updated;
+    },
+    onMutate: async (newBio: string | null) => {
+      await queryClient.cancelQueries({ queryKey: ['my-profile', user?.id] });
+
+      const previous = queryClient.getQueryData<Profile>(['my-profile', user?.id]);
+      if (previous) {
+        queryClient.setQueryData<Profile>(['my-profile', user?.id], {
+          ...previous,
+          bio: newBio,
+        });
+      }
+
+      return { previous };
+    },
+    onError: (err, _newBio, context) => {
+      console.error('[useUpdateProfileBio] Erreur :', err);
+      if (context?.previous) {
+        queryClient.setQueryData(['my-profile', user?.id], context.previous);
+      }
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['my-profile', user?.id], updated);
+    },
+  });
+};

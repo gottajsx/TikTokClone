@@ -66,3 +66,27 @@ export const updateGender = async (
   return data;
 };
 
+export const updateProfileBio = async (
+  userId: string,
+  bio: string | null
+): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        id: userId,   // PK de la table profiles
+        bio: bio,
+      },
+      { onConflict: 'id' }
+    )
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('[updateProfileBio] Erreur Supabase :', error.message, error.details);
+    throw error;
+  }
+
+  return data;
+};
+
