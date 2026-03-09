@@ -35,7 +35,7 @@ export default function OnboardingBioScreen() {
   const handleValidate = () => {
     mutate(bio, {
       onSuccess: () => {
-        router.replace('/(protected)/(tabs)');
+        router.replace('/(protected)/(onboarding)/OnboardingTownScreen');
       },
       onError: (error: any) => {
         Alert.alert(
@@ -47,7 +47,7 @@ export default function OnboardingBioScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(protected)/(tabs)');
+    router.replace('/(protected)/(onboarding)/OnboardingTownScreen');
   };
 
   const applySuggestion = (text: string) => {
