@@ -90,3 +90,32 @@ export const updateProfileBio = async (
   return data;
 };
 
+export const updateProfileLocation = async (
+  userId: string,
+  town: string | null,
+  country: string | null
+): Promise<Profile | null> => {
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      town,
+      country,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      '[updateProfileLocation] Erreur Supabase :',
+      error.message,
+      error.details
+    );
+    throw error;
+  }
+
+  return data;
+};
+

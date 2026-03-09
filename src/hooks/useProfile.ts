@@ -9,6 +9,7 @@ import {
   updateGender, 
   acceptTerms, 
   updateProfileBio, 
+  updateProfileLocation,
 } from '@/services/profileService';
 import { Profile } from '@/types/types';
 
@@ -138,5 +139,83 @@ export const useUpdateProfileBio = () => {
     onSuccess: (updated) => {
       queryClient.setQueryData(['my-profile', user?.id], updated);
     },
+  });
+};
+
+export const useUpdateProfileLocation = () => {
+
+  const { data: user } = useCurrentUser();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+
+    mutationKey: ['update', 'profile-location'],
+
+    mutationFn: async (payload: {
+      town: string | null;
+      country: string | null;
+    }): Promise<Profile> => {
+
+      if (!user?.id) {
+        throw new Error('Utilisateur non authentifié');
+      }
+
+      const updated = await updateProfileLocation(
+        user.id,
+        payload.town,
+        payload.country
+      );
+
+      if (!updated) {
+        throw new Error('Profil non retourné');
+      }
+
+      return updated;
+    },
+
+    onMutate: async (newLocation) => {
+
+      await queryClient.cancelQueries({
+        queryKey: ['my-profile', user?.id],
+      });
+
+      const previous = queryClient.getQueryData<Profile>([
+        'my-profile',
+        user?.id,
+      ]);
+
+      if (previous) {
+        queryClient.setQueryData<Profile>(['my-profile', user?.id], {
+          ...previous,
+          town: newLocation.town,
+          country: newLocation.country,
+        });
+      }
+
+      return { previous };
+    },
+
+    onError: (err, _vars, context) => {
+
+      console.error('[useUpdateProfileLocation] Erreur :', err);
+
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ['my-profile', user?.id],
+          context.previous
+        );
+      }
+
+    },
+
+    onSuccess: (updated) => {
+
+      queryClient.setQueryData(
+        ['my-profile', user?.id],
+        updated
+      );
+
+    },
+
   });
 };
