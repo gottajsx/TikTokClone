@@ -57,7 +57,7 @@ export default function OnboardingPreferencesRelationshipScreen() {
     mutate(selectedArray, {
       onSuccess: () => {
         console.log('Préférences relationnelles sauvegardées → redirection');
-        router.replace('/(protected)/(tabs)'); // Ou ta route de fin d’onboarding
+        router.replace('/(protected)/(onboarding)/OnboardingBioScreen'); // Ou ta route de fin d’onboarding
       },
       onError: (error: any) => {
         Alert.alert(
