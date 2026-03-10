@@ -1,91 +1,68 @@
-import { supabase } from '@/lib/supabase';
-import * as ImageManipulator from 'expo-image-manipulator';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { uploadAvatar, skipAvatar } from '@/services/avatarService';
+import { useCurrentUser } from './useCurrentUser';
 import { Profile } from '@/types/types';
 
-const DEFAULT_AVATAR_URL = 'DEFAULT_AVATAR_PLACEHOLDER';
+export const useUploadAvatar = () => {
 
-export const uploadAvatar = async (
-  userId: string,
-  imageUri: string
-): Promise<Profile | null> => {
+  const { data: user } = useCurrentUser();
+  const queryClient = useQueryClient();
 
-  // 1️⃣ compression + resize
-  const manipulated = await ImageManipulator.manipulateAsync(
-    imageUri,
-    [{ resize: { width: 512 } }],
-    {
-      compress: 0.7,
-      format: ImageManipulator.SaveFormat.JPEG,
-    }
-  );
+  return useMutation({
 
-  const response = await fetch(manipulated.uri);
-  const blob = await response.blob();
+    mutationKey: ['upload-avatar'],
 
-  const filePath = `${userId}/avatar.jpg`;
+    mutationFn: async (imageUri: string): Promise<Profile> => {
 
-  // 2️⃣ supprimer ancien avatar (si existe)
-  await supabase.storage
-    .from('videos')
-    .remove([filePath])
-    .catch(() => {});
+      if (!user?.id) throw new Error('Utilisateur non authentifié');
 
-  // 3️⃣ upload rapide
-  const { error: uploadError } = await supabase.storage
-    .from('videos')
-    .upload(filePath, blob, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
+      const profile = await uploadAvatar(user.id, imageUri);
 
-  if (uploadError) {
-    console.error('[uploadAvatar] Upload error:', uploadError.message);
-    throw uploadError;
-  }
+      if (!profile) throw new Error('Profil non retourné');
 
-  // 4️⃣ récupérer url publique
-  const { data } = supabase.storage
-    .from('videos')
-    .getPublicUrl(filePath);
+      return profile;
+    },
 
-  // 5️⃣ cache busting
-  const avatarUrl = `${data.publicUrl}?t=${Date.now()}`;
+    onSuccess: (profile) => {
 
-  // 6️⃣ update profil
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .update({
-      avatar_url: avatarUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-    .select()
-    .maybeSingle();
+      queryClient.setQueryData(
+        ['my-profile', user?.id],
+        profile
+      );
 
-  if (error) {
-    console.error('[uploadAvatar] Profile update error:', error.message);
-    throw error;
-  }
+    },
 
-  return profile;
+  });
 };
 
-export const skipAvatar = async (userId: string): Promise<Profile | null> => {
+export const useSkipAvatar = () => {
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({
-      avatar_url: DEFAULT_AVATAR_URL,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
-    .select()
-    .maybeSingle();
+  const { data: user } = useCurrentUser();
+  const queryClient = useQueryClient();
 
-  if (error) {
-    console.error('[skipAvatar] error:', error.message);
-    throw error;
-  }
+  return useMutation({
 
-  return data;
+    mutationKey: ['skip-avatar'],
+
+    mutationFn: async (): Promise<Profile> => {
+
+      if (!user?.id) throw new Error('Utilisateur non authentifié');
+
+      const profile = await skipAvatar(user.id);
+
+      if (!profile) throw new Error('Profil non retourné');
+
+      return profile;
+    },
+
+    onSuccess: (profile) => {
+
+      queryClient.setQueryData(
+        ['my-profile', user?.id],
+        profile
+      );
+
+    },
+
+  });
 };
