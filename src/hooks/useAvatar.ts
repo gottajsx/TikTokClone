@@ -1,68 +1,40 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadAvatar, skipAvatar } from '@/services/avatarService';
-import { useCurrentUser } from './useCurrentUser';
-import { Profile } from '@/types/types';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export const useUploadAvatar = () => {
-
-  const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
 
   return useMutation({
-
     mutationKey: ['upload-avatar'],
-
-    mutationFn: async (imageUri: string): Promise<Profile> => {
-
-      if (!user?.id) throw new Error('Utilisateur non authentifié');
-
-      const profile = await uploadAvatar(user.id, imageUri);
-
-      if (!profile) throw new Error('Profil non retourné');
-
-      return profile;
+    mutationFn: async (uri: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      return uploadAvatar(user.id, uri);
     },
-
-    onSuccess: (profile) => {
-
-      queryClient.setQueryData(
-        ['my-profile', user?.id],
-        profile
-      );
-
+    retry: 2,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['my-profile', user?.id],
+      });
     },
-
   });
 };
 
 export const useSkipAvatar = () => {
-
-  const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
 
   return useMutation({
-
     mutationKey: ['skip-avatar'],
-
-    mutationFn: async (): Promise<Profile> => {
-
-      if (!user?.id) throw new Error('Utilisateur non authentifié');
-
-      const profile = await skipAvatar(user.id);
-
-      if (!profile) throw new Error('Profil non retourné');
-
-      return profile;
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Not authenticated');
+      return skipAvatar(user.id);
     },
-
-    onSuccess: (profile) => {
-
-      queryClient.setQueryData(
-        ['my-profile', user?.id],
-        profile
-      );
-
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['my-profile', user?.id],
+      });
     },
-
   });
 };
