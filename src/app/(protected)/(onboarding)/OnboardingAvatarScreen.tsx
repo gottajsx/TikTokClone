@@ -1,31 +1,19 @@
+import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  SafeAreaView,
-} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-
+import { router } from 'expo-router';
 import { useUploadAvatar, useSkipAvatar } from '@/hooks/useAvatar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OnboardingAvatarScreen() {
-  const router = useRouter();
-
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null);
 
   const { mutate: uploadAvatar, isPending: uploading } = useUploadAvatar();
   const { mutate: skipAvatar, isPending: skipping } = useSkipAvatar();
 
-  const isLoading = uploading || skipping;
-
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -34,13 +22,13 @@ export default function OnboardingAvatarScreen() {
     if (result.canceled) return;
 
     const uri = result.assets[0].uri;
-    setImageUri(uri);
+    setImage(uri);
   };
 
   const handleValidate = () => {
-    if (!imageUri) return;
+    if (!image) return;
 
-    uploadAvatar(imageUri, {
+    uploadAvatar(image, {
       onSuccess: () => {
         router.replace('/(protected)/(tabs)');
       },
@@ -55,151 +43,80 @@ export default function OnboardingAvatarScreen() {
     });
   };
 
-  const hasImage = !!imageUri;
+  const loading = uploading || skipping;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Ajoute une photo</Text>
-        <Text style={styles.subtitle}>
-          Les profils avec photo reçoivent beaucoup plus de matchs.
-        </Text>
+    <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
 
-        {/* AVATAR */}
-        <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.avatar} />
-          ) : (
-            <View style={styles.placeholder}>
-              <Text style={styles.placeholderText}>Choisir une photo</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+      <Text style={{ fontSize: 28, fontWeight: '600', marginBottom: 20 }}>
+        Ajoute une photo
+      </Text>
 
-        {/* BOUTONS */}
-        <View style={styles.buttons}>
-          {/* VALIDER */}
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              (!hasImage || isLoading) && styles.disabledButton,
-            ]}
-            disabled={!hasImage || isLoading}
-            onPress={handleValidate}
-          >
-            {uploading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Valider</Text>
-            )}
-          </TouchableOpacity>
+      <TouchableOpacity
+        onPress={pickImage}
+        style={{
+          width: 160,
+          height: 160,
+          borderRadius: 80,
+          backgroundColor: '#eee',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: 30,
+        }}
+      >
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            style={{ width: 160, height: 160, borderRadius: 80 }}
+          />
+        ) : (
+          <Text>Choisir</Text>
+        )}
+      </TouchableOpacity>
 
-          {/* PASSER */}
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              (hasImage || isLoading) && styles.disabledButton,
-            ]}
-            disabled={hasImage || isLoading}
-            onPress={handleSkip}
-          >
-            {skipping ? (
-              <ActivityIndicator />
-            ) : (
-              <Text style={styles.secondaryButtonText}>Passer</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* bouton valider */}
+      <TouchableOpacity
+        disabled={!image || loading}
+        onPress={handleValidate}
+        style={{
+          width: '100%',
+          padding: 16,
+          borderRadius: 12,
+          backgroundColor: image ? '#FF4458' : '#ccc',
+          marginBottom: 12,
+          alignItems: 'center',
+        }}
+      >
+        {uploading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={{ color: 'white', fontWeight: '600' }}>
+            Valider la photo
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      {/* bouton skip */}
+      <TouchableOpacity
+        disabled={!!image || loading}
+        onPress={handleSkip}
+        style={{
+          width: '100%',
+          padding: 16,
+          borderRadius: 12,
+          backgroundColor: !image ? '#000' : '#ccc',
+          alignItems: 'center',
+        }}
+      >
+        {skipping ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={{ color: 'white', fontWeight: '600' }}>
+            Passer
+          </Text>
+        )}
+      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
-
-const AVATAR_SIZE = 160;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-
-  content: {
-    flex: 1,
-    padding: 24,
-    alignItems: 'center',
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginTop: 20,
-  },
-
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-
-  avatarContainer: {
-    marginBottom: 40,
-  },
-
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-  },
-
-  placeholder: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    borderWidth: 2,
-    borderColor: '#DDD',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  placeholderText: {
-    color: '#777',
-  },
-
-  buttons: {
-    width: '100%',
-    marginTop: 'auto',
-    gap: 12,
-  },
-
-  primaryButton: {
-    backgroundColor: '#000',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-
-  secondaryButton: {
-    backgroundColor: '#E6E6E6',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-
-  secondaryButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
-    color: '#333',
-  },
-
-  disabledButton: {
-    opacity: 0.4,
-  },
-});

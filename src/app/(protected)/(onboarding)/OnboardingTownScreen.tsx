@@ -74,14 +74,14 @@ export default function OnboardingTownScreen() {
     if (!selectedTown) return;
     mutate(
       { town: selectedTown, country: 'France' },
-      { onSuccess: () => router.replace('/(protected)/(tabs)') }
+      { onSuccess: () => router.replace('/(protected)/(onboarding)/OnboardingAvatarScreen') }
     );
   };
 
   const handleSkip = () => {
     mutate(
       { town: null, country: null },
-      { onSuccess: () => router.replace('/(protected)/(tabs)') }
+      { onSuccess: () => router.replace('/(protected)/(onboarding)/OnboardingAvatarScreen') }
     );
   };
 
