@@ -50,8 +50,8 @@ export const uploadVideoToStorage = async (storageProps: StorageInput) => {
             type: `video/${fileExtension}`,
         } as any;
 
-        console.log('✅ File object created:', fileToUpload);
-        console.log('🚀 Uploading to Supabase bucket: videos');
+        console.log('File object created:', fileToUpload);
+        console.log('Uploading to Supabase bucket: videos');
 
         // Upload
         const { data: uploadData, error: uploadError } =
@@ -63,7 +63,7 @@ export const uploadVideoToStorage = async (storageProps: StorageInput) => {
                 });
 
             if (uploadError) {
-                console.error('❌ Supabase upload error:', {
+                console.error('Supabase upload error:', {
                     message: uploadError.message,
                     name: uploadError.name,
                     stack: uploadError.stack,
@@ -71,7 +71,7 @@ export const uploadVideoToStorage = async (storageProps: StorageInput) => {
                 throw uploadError;
             }
 
-        console.log('✅ Upload successful:', uploadData);
+        console.log('Upload successful:', uploadData);
 
         // Recuperation de l'URL publique
         const { data: publicUrlData } = supabase.storage
@@ -82,12 +82,12 @@ export const uploadVideoToStorage = async (storageProps: StorageInput) => {
             throw new Error('Failed to generate public URL');
         }
 
-        console.log('✅ Public URL generated:', publicUrlData.publicUrl);
+        console.log('Public URL generated:', publicUrlData.publicUrl);
 
         return publicUrlData.publicUrl;
 
     } catch (error: any) {
-        console.error('🔥 Upload process failed at some stage:', {
+        console.error('Upload process failed at some stage:', {
             message: error?.message,
             stack: error?.stack,
             raw: error,
