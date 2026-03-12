@@ -106,7 +106,7 @@ export default function OnboardingVideoExpoScreen() {
     if (!videoUri) return;
     uploadVideo(videoUri, {
         onSuccess: () => {
-            console.log('Vidéo uploadée ✅ → redirection');
+            console.log('Vidéo uploadée: redirection');
             router.replace('/(protected)/(tabs)');
         },
         onError: (error) => {

@@ -62,7 +62,7 @@ export default function ProtectedLayout() {
   const profile = profileQuery.data;
   const latestVersion = termsVersionQuery.data;
 
-  // ✅ Guard : données pas encore disponibles malgré isPending = false
+  // Guard : données pas encore disponibles malgré isPending = false
   if (!profile || latestVersion === undefined) {
     return (
       <View style={styles.fullscreen}>
@@ -84,7 +84,7 @@ export default function ProtectedLayout() {
   }
 
   // 5. Vérification CGU
-  // ✅ On vérifie seulement quand profile ET latestVersion sont définis et non-null
+  // On vérifie seulement quand profile ET latestVersion sont définis et non-null
   const needsToAcceptTerms =
     !profile.terms_accepted_at ||
     profile.terms_version !== latestVersion;

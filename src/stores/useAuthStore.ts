@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState>()(
       setAcceptedTerms: (value) => set({ acceptedTerms: value }),
 
       init: () => {
-        // ✅ Lit immédiatement la session persistée dans AsyncStorage
+        // Lit immédiatement la session persistée dans AsyncStorage
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
             set({
@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
           }
         });
 
-        // ✅ Timeout de sécurité si getSession plante
+        // Timeout de sécurité si getSession plante
         const timeout = setTimeout(() => {
           if (get().loading) {
             console.warn("[AuthStore] Session timeout, forcing loading false");
@@ -84,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
               loading: false,
             });
           } else {
-            // ✅ On ignore INITIAL_SESSION null si getSession a déjà
+            // On ignore INITIAL_SESSION null si getSession a déjà
             // trouvé une session pour éviter d'écraser un état valide
             if (event === "INITIAL_SESSION") return;
 
@@ -191,7 +191,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      // ✅ Supabase gère déjà la persistance de session dans AsyncStorage
+      // Supabase gère déjà la persistance de session dans AsyncStorage
       // On ne persiste que les préférences utilisateur
       partialize: (state) => ({
         acceptedTerms: state.acceptedTerms,

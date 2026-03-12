@@ -52,7 +52,7 @@ export default function GenderScreen() {
     mutate(selectedGender, {
       onSuccess: () => {
         if (mode === 'onboarding') {
-          router.replace('/(protected)/(profile-setup)/preferences');
+          router.replace('/(protected)/(profile-setup)/preferences?mode=onboarding');
         } else {
           Alert.alert('Succès', 'Ton genre a été mis à jour.');
           router.back(); // ou router.replace('/profile') selon ton flow

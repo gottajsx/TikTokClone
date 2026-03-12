@@ -38,16 +38,16 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  // ✅ Pour éviter de rediriger plusieurs fois
+  // Pour éviter de rediriger plusieurs fois
   const hasRedirected = useRef(false);
 
-  // ✅ Init unique au montage
+  // Init unique au montage
   useEffect(() => {
     const subscription = init();
     return () => subscription?.unsubscribe();
   }, []);
 
-  // ✅ Vide le cache React Query à chaque déconnexion
+  // Vide le cache React Query à chaque déconnexion
   // pour éviter qu'un nouvel utilisateur hérite du cache du précédent
   const prevAuthenticated = useRef<boolean | null>(null);
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function RootLayout() {
     prevAuthenticated.current = isAuthenticated;
   }, [isAuthenticated]);
 
-  // ✅ Cache le splash uniquement quand loading est false
+  // Cache le splash uniquement quand loading est false
   // (session déjà restaurée dans le store)
   useEffect(() => {
     if (loading) return;
@@ -76,7 +76,7 @@ export default function RootLayout() {
     prepare();
   }, [loading]);
 
-  // ✅ Redirection UNIQUEMENT quand tout est prêt
+  // Redirection UNIQUEMENT quand tout est prêt
   // et qu'on a une valeur stable de isAuthenticated
   useEffect(() => {
     if (loading || !appReady) return;
@@ -99,7 +99,7 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, loading, appReady, segments]);
 
-  // ✅ Reset du ref quand isAuthenticated change
+  // Reset du ref quand isAuthenticated change
   // (permet de rediriger à nouveau après logout/login)
   useEffect(() => {
     hasRedirected.current = false;

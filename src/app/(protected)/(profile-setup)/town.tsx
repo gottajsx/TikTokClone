@@ -29,10 +29,10 @@ export default function TownScreen() {
   const [selectedTown, setSelectedTown] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Récupération du profil si mode edit
+  // Récupération du profil si mode edit
   const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
 
-  // ✅ Préremplissage si mode edit
+  // Préremplissage si mode edit
   useEffect(() => {
     if (mode === 'edit' && profile) {
       if (profile.town) {
