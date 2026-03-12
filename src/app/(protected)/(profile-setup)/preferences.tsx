@@ -63,7 +63,7 @@ export default function PreferencesScreen({ mode = 'onboarding', onSaved }: Prop
     mutate(selectedArray, {
       onSuccess: () => {
         if (mode === 'onboarding') {
-          router.replace('/(protected)/(profile-setup)/relations');
+          router.replace('/(protected)/(profile-setup)/relations?mode=onboarding');
         } else {
           onSaved?.();
           Alert.alert('Succès', 'Préférences mises à jour.');

@@ -47,7 +47,7 @@ export default function BioScreen() {
     mutate(bio, {
       onSuccess: () => {
         if (mode === 'onboarding') {
-          router.replace('/(protected)/(profile-setup)/town');
+          router.replace('/(protected)/(profile-setup)/town?mode=onboarding');
         } else {
           Alert.alert('Succès', 'Ta bio a été mise à jour.');
           router.back(); // ou router.replace('/profile') selon ton flow
@@ -63,7 +63,7 @@ export default function BioScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(protected)/(profile-setup)/town');
+    router.replace('/(protected)/(profile-setup)/town?mode=onboarding');
   };
 
   const applySuggestion = (text: string) => {

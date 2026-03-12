@@ -11,7 +11,7 @@ export default function ProtectedLayout() {
   const preferencesQuery = useMyPreferences(isAuthenticated);
   const termsVersionQuery = useActiveTermsVersion(isAuthenticated);
 
-  // ✅ isPending = true si disabled OU en cours de chargement
+  // isPending = true si disabled OU en cours de chargement
   // contrairement à isLoading qui est false si la query est désactivée
   const isLoading =
     authLoading ||
@@ -102,11 +102,8 @@ export default function ProtectedLayout() {
         animationDuration: 300,
       }}
     >
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(preferences)" options={{ headerShown: false }} />
-      <Stack.Screen name="(profile)" options={{ headerShown: false }} />
+      <Stack.Screen name="(profile-setup)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="(settings)" options={{ headerShown: false }} />
     </Stack>
   );
 }

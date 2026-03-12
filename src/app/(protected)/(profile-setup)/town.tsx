@@ -92,7 +92,7 @@ export default function TownScreen() {
       {
         onSuccess: () => {
           if (mode === 'onboarding') {
-            router.replace('/(protected)/(profile-setup)/avatar');
+            router.replace('/(protected)/(profile-setup)/avatar?mode=onboarding');
           } else {
             Alert.alert('Succès', 'Ta localisation a été mise à jour.');
             router.back();
