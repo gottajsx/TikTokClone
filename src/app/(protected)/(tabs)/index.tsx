@@ -39,12 +39,12 @@ export default function HomeScreen() {
 
   // Si gender manquant → OnboardingGender
   if (!profile?.gender) {
-    return <Redirect href="/(protected)/(onboarding)/OnboardingGender" />;
+    return <Redirect href="/(protected)/(profile-setup)/gender" />;
   }
 
   // Si gender OK mais gender_preference manquant → OnboardingPreferencesGender
   if (!preferences || preferences.gender_preferences == null || preferences.gender_preferences.length === 0) {
-    return <Redirect href="/(protected)/(onboarding)/OnboardingPreferencesGender" />;
+    return <Redirect href="/(protected)/(profile-setup)/preferences" />;
   }
 
   // Player UNIQUE partagé pour TOUTE la FlatList

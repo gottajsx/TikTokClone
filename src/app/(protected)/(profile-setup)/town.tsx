@@ -7,17 +7,19 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useUpdateProfileLocation } from '@/hooks/useProfile';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useUpdateProfileLocation, useMyProfile } from '@/hooks/useProfile';
 
 type CitySuggestion = {
   name: string;
   postcode: string;
 };
 
-export default function OnboardingTownScreen() {
+export default function TownScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
   const router = useRouter();
   const { mutate, isPending } = useUpdateProfileLocation();
 
@@ -27,7 +29,20 @@ export default function OnboardingTownScreen() {
   const [selectedTown, setSelectedTown] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Debounce
+  // ✅ Récupération du profil si mode edit
+  const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
+
+  // ✅ Préremplissage si mode edit
+  useEffect(() => {
+    if (mode === 'edit' && profile) {
+      if (profile.town) {
+        setSelectedTown(profile.town);
+        setQuery(`${profile.town}${profile.country ? ` (${profile.country})` : ''}`);
+      }
+    }
+  }, [mode, profile]);
+
+  // 🔹 Debounce pour la recherche
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(handler);
@@ -47,12 +62,12 @@ export default function OnboardingTownScreen() {
           `https://api-adresse.data.gouv.fr/search/?q=${debouncedQuery}&type=municipality&limit=5`
         );
         const json = await res.json();
-        // ✅ Vérification sécurisée
-        const features = Array.isArray(json.features) ? json.features : [];
-        const cities = json.features.map((f: any) => ({
-          name: f.properties.city,
-          postcode: f.properties.postcode,
-        }));
+        const cities = Array.isArray(json.features)
+          ? json.features.map((f: any) => ({
+              name: f.properties.city,
+              postcode: f.properties.postcode,
+            }))
+          : [];
         setSuggestions(cities);
       } catch (err) {
         console.error('Erreur recherche ville', err);
@@ -74,25 +89,44 @@ export default function OnboardingTownScreen() {
     if (!selectedTown) return;
     mutate(
       { town: selectedTown, country: 'France' },
-      { onSuccess: () => router.replace('/(protected)/(onboarding)/OnboardingAvatarScreen') }
+      {
+        onSuccess: () => {
+          if (mode === 'onboarding') {
+            router.replace('/(protected)/(profile-setup)/avatar');
+          } else {
+            Alert.alert('Succès', 'Ta localisation a été mise à jour.');
+            router.back();
+          }
+        },
+      }
     );
   };
 
   const handleSkip = () => {
     mutate(
       { town: null, country: null },
-      { onSuccess: () => router.replace('/(protected)/(onboarding)/OnboardingAvatarScreen') }
+      { onSuccess: () => router.replace('/(protected)/(profile-setup)/avatar') }
     );
   };
 
   const hasTown = !!selectedTown;
+
+  if (mode === 'edit' && profileLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator color="#000" size="large" style={{ marginTop: 40 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Où habites-tu ?</Text>
         <Text style={styles.subtitle}>
-          Indique ta ville. Tu pourras modifier ça plus tard.
+          {mode === 'edit'
+            ? 'Modifie ta ville actuelle si besoin.'
+            : 'Indique ta ville. Tu pourras modifier ça plus tard.'}
         </Text>
 
         <TextInput
@@ -119,7 +153,12 @@ export default function OnboardingTownScreen() {
               ]}
               onPress={() => selectTown(item)}
             >
-              <Text style={styles.cardText}>
+              <Text
+                style={[
+                  styles.cardText,
+                  selectedTown === item.name && styles.selectedCardText,
+                ]}
+              >
                 {item.name} ({item.postcode})
               </Text>
             </TouchableOpacity>
@@ -138,20 +177,24 @@ export default function OnboardingTownScreen() {
             {isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Valider</Text>
+              <Text style={styles.primaryButtonText}>
+                {mode === 'edit' ? 'Mettre à jour' : 'Valider'}
+              </Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              (hasTown || isPending) && styles.disabledButton,
-            ]}
-            disabled={hasTown || isPending}
-            onPress={handleSkip}
-          >
-            <Text style={styles.secondaryButtonText}>Passer</Text>
-          </TouchableOpacity>
+          {mode === 'onboarding' && (
+            <TouchableOpacity
+              style={[
+                styles.secondaryButton,
+                (hasTown || isPending) && styles.disabledButton,
+              ]}
+              disabled={hasTown || isPending}
+              onPress={handleSkip}
+            >
+              <Text style={styles.secondaryButtonText}>Passer</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -170,9 +213,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  list: {
-    maxHeight: 220,
-  },
+  list: { maxHeight: 220 },
   card: {
     padding: 16,
     borderRadius: 16,
@@ -184,21 +225,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
   },
-  selectedCard: {
-    backgroundColor: '#000',
-  },
-  cardText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  selectedCardText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  buttons: {
-    marginTop: 'auto',
-    gap: 12,
-  },
+  selectedCard: { backgroundColor: '#000' },
+  cardText: { fontSize: 16, color: '#333' },
+  selectedCardText: { color: '#fff', fontWeight: '600' },
+  buttons: { marginTop: 'auto', gap: 12 },
   primaryButton: {
     backgroundColor: '#000',
     padding: 16,

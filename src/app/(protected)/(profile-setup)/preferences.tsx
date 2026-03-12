@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useUpdateGenderPreferences } from '@/hooks/usePreferences';
+import { useUpdateGenderPreferences, useMyPreferences } from '@/hooks/usePreferences';
 import { GenderType } from '@/types/types';
 
-// Typage strict
 type GenderPref = 'male' | 'female' | 'non-binary' | null;
+type Mode = 'onboarding' | 'edit';
 
 const genders: { label: string; value: GenderPref }[] = [
   { label: 'Hommes', value: 'male' },
@@ -22,9 +22,23 @@ const genders: { label: string; value: GenderPref }[] = [
   { label: 'Non-binaires', value: 'non-binary' },
 ];
 
-export default function OnboardingPreferencesGenderScreen() {
+type Props = {
+  mode?: Mode;
+  onSaved?: () => void; // callback pour le mode edit
+};
+
+export default function PreferencesScreen({ mode = 'onboarding', onSaved }: Props) {
   const [selected, setSelected] = useState<Set<GenderType>>(new Set());
   const { mutate, isPending } = useUpdateGenderPreferences();
+  
+  // 🔹 Charger les préférences existantes en mode edit
+  const { data: preferences } = useMyPreferences(mode === 'edit');
+
+  useEffect(() => {
+    if (mode === 'edit' && preferences?.gender_preferences?.length) {
+      setSelected(new Set(preferences.gender_preferences));
+    }
+  }, [preferences, mode]);
 
   const toggleGender = (value: GenderType) => {
     setSelected((prev) => {
@@ -48,8 +62,12 @@ export default function OnboardingPreferencesGenderScreen() {
 
     mutate(selectedArray, {
       onSuccess: () => {
-        console.log('Préférences sauvegardées → redirection');
-        router.replace('/(protected)/(onboarding)/OnboardingPreferencesRelationshipScreen');
+        if (mode === 'onboarding') {
+          router.replace('/(protected)/(profile-setup)/relations');
+        } else {
+          onSaved?.();
+          Alert.alert('Succès', 'Préférences mises à jour.');
+        }
       },
       onError: (error: any) => {
         Alert.alert(
@@ -62,14 +80,10 @@ export default function OnboardingPreferencesGenderScreen() {
 
   const isSelected = (value: GenderType) => selected.has(value);
 
-  
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Qui souhaites-tu rencontrer ?</Text>
-        
-        {/* ← TEXTE EXPLICATIF AJOUTÉ ICI */}
         <Text style={styles.explanation}>
           Sélectionne une ou plusieurs options. Tu pourras toujours modifier tes préférences plus tard.
         </Text>
@@ -116,7 +130,9 @@ export default function OnboardingPreferencesGenderScreen() {
           {isPending ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>Continuer</Text>
+            <Text style={styles.buttonText}>
+              {mode === 'onboarding' ? 'Continuer' : 'Sauvegarder'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>

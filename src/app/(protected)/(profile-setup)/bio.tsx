@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useUpdateProfileBio } from '@/hooks/useProfile';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useUpdateProfileBio, useMyProfile } from '@/hooks/useProfile';
 
 const MAX_LENGTH = 80;
 
@@ -22,12 +22,23 @@ const suggestions = [
   "Fan de cinéma et de discussions tardives",
 ];
 
-export default function OnboardingBioScreen() {
+export default function BioScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
   const [bio, setBio] = useState('');
   const [inputHeight, setInputHeight] = useState(120);
 
   const router = useRouter();
   const { mutate, isPending } = useUpdateProfileBio();
+
+  // Récupération de la bio actuelle si mode === 'edit'
+  const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
+
+  // Pré-remplir la bio existante en mode edit
+  useEffect(() => {
+    if (mode === 'edit' && profile?.bio) {
+      setBio(profile.bio);
+    }
+  }, [mode, profile]);
 
   const remaining = MAX_LENGTH - bio.length;
   const hasText = bio.trim().length > 0;
@@ -35,7 +46,12 @@ export default function OnboardingBioScreen() {
   const handleValidate = () => {
     mutate(bio, {
       onSuccess: () => {
-        router.replace('/(protected)/(onboarding)/OnboardingTownScreen');
+        if (mode === 'onboarding') {
+          router.replace('/(protected)/(profile-setup)/town');
+        } else {
+          Alert.alert('Succès', 'Ta bio a été mise à jour.');
+          router.back(); // ou router.replace('/profile') selon ton flow
+        }
       },
       onError: (error: any) => {
         Alert.alert(
@@ -47,7 +63,7 @@ export default function OnboardingBioScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(protected)/(onboarding)/OnboardingTownScreen');
+    router.replace('/(protected)/(profile-setup)/town');
   };
 
   const applySuggestion = (text: string) => {
@@ -56,12 +72,22 @@ export default function OnboardingBioScreen() {
     }
   };
 
+  if (mode === 'edit' && profileLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator color="#111" size="large" style={{ marginTop: 40 }} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Ajoute une bio</Text>
         <Text style={styles.subtitle}>
-          Une petite phrase peut aider à briser la glace.
+          {mode === 'edit'
+            ? 'Modifie ta bio actuelle ci-dessous.'
+            : 'Une petite phrase peut aider à briser la glace.'}
         </Text>
 
         {/* INPUT AUTO RESIZE */}
@@ -108,20 +134,24 @@ export default function OnboardingBioScreen() {
             {isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Valider</Text>
+              <Text style={styles.primaryButtonText}>
+                {mode === 'edit' ? 'Mettre à jour' : 'Valider'}
+              </Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              hasText && styles.disabledButton,
-            ]}
-            disabled={hasText}
-            onPress={handleSkip}
-          >
-            <Text style={styles.secondaryButtonText}>Passer</Text>
-          </TouchableOpacity>
+          {mode === 'onboarding' && (
+            <TouchableOpacity
+              style={[
+                styles.secondaryButton,
+                hasText && styles.disabledButton,
+              ]}
+              disabled={hasText}
+              onPress={handleSkip}
+            >
+              <Text style={styles.secondaryButtonText}>Passer</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -129,28 +159,10 @@ export default function OnboardingBioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
-
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-
+  container: { flex: 1, backgroundColor: '#FFF' },
+  content: { flex: 1, padding: 24 },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 6 },
+  subtitle: { fontSize: 16, color: '#666', marginBottom: 20 },
   input: {
     borderWidth: 1,
     borderColor: '#E6E6E6',
@@ -159,18 +171,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#FAFAFA',
   },
-
-  counter: {
-    marginTop: 8,
-    textAlign: 'right',
-    color: '#777',
-  },
-
-  suggestionsContainer: {
-    marginTop: 20,
-    gap: 10,
-  },
-
+  counter: { marginTop: 8, textAlign: 'right', color: '#777' },
+  suggestionsContainer: { marginTop: 20, gap: 10 },
   suggestion: {
     backgroundColor: '#F2F2F2',
     paddingVertical: 10,
@@ -178,44 +180,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignSelf: 'flex-start',
   },
-
-  suggestionText: {
-    fontSize: 14,
-    color: '#444',
-  },
-
-  buttons: {
-    marginTop: 40,
-    gap: 12,
-  },
-
+  suggestionText: { fontSize: 14, color: '#444' },
+  buttons: { marginTop: 40, gap: 12 },
   primaryButton: {
     backgroundColor: '#111',
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
   },
-
-  primaryButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
+  primaryButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   secondaryButton: {
     backgroundColor: '#DDD',
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
   },
-
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-
-  disabledButton: {
-    opacity: 0.4,
-  },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#333' },
+  disabledButton: { opacity: 0.4 },
 });

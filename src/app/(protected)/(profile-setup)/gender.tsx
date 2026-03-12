@@ -25,10 +25,10 @@ export default function GenderScreen() {
   const [selectedGender, setSelectedGender] = useState<GenderType | null>(null);
   const { mutate, isPending } = useUpdateGender();
 
-  // ✅ Hook pour récupérer le profil actuel (utile si mode === 'edit')
+  // Hook pour récupérer le profil actuel (utile si mode === 'edit')
   const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
 
-  // ✅ On initialise le genre si on est en mode edit
+  // On initialise le genre si on est en mode edit
   useEffect(() => {
     if (mode === 'edit' && profile) {
       setSelectedGender(profile.gender ?? null);
@@ -52,7 +52,7 @@ export default function GenderScreen() {
     mutate(selectedGender, {
       onSuccess: () => {
         if (mode === 'onboarding') {
-          router.replace('/(protected)/(profile-setup)/PreferencesScreen');
+          router.replace('/(protected)/(profile-setup)/preferences');
         } else {
           Alert.alert('Succès', 'Ton genre a été mis à jour.');
           router.back(); // ou router.replace('/profile') selon ton flow
@@ -81,8 +81,11 @@ export default function GenderScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Quel est ton genre ?</Text>
+        
         <Text style={styles.explanation}>
-          Choisis une option. Tu pourras toujours modifier ce choix plus tard.
+          {mode === 'edit'
+            ? 'Ton genre actuel est pré-sélectionné. Tu peux le modifier si besoin.'
+            : 'Choisis une option. Tu pourras toujours modifier ce choix plus tard.'}
         </Text>
 
         {genders.map((gender) => (
@@ -127,7 +130,9 @@ export default function GenderScreen() {
           {isPending ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>Continuer</Text>
+            <Text style={styles.buttonText}>
+              {mode === 'edit' ? 'Mettre à jour' : 'Continuer'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
