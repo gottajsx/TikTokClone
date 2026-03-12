@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useUpdateGender } from '@/hooks/useProfile';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useUpdateGender, useMyProfile } from '@/hooks/useProfile';
 
 type GenderType = 'male' | 'female' | 'non-binary' | null;
 
@@ -20,9 +20,20 @@ const genders: { label: string; value: GenderType }[] = [
   { label: 'Non-binaire', value: 'non-binary' },
 ];
 
-export default function OnboardingGenderScreen() {
+export default function GenderScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
   const [selectedGender, setSelectedGender] = useState<GenderType | null>(null);
   const { mutate, isPending } = useUpdateGender();
+
+  // ✅ Hook pour récupérer le profil actuel (utile si mode === 'edit')
+  const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
+
+  // ✅ On initialise le genre si on est en mode edit
+  useEffect(() => {
+    if (mode === 'edit' && profile) {
+      setSelectedGender(profile.gender ?? null);
+    }
+  }, [mode, profile]);
 
   const handleSelect = (value: GenderType) => {
     if (selectedGender === value) {
@@ -40,8 +51,12 @@ export default function OnboardingGenderScreen() {
 
     mutate(selectedGender, {
       onSuccess: () => {
-        console.log('Genre mis à jour → redirection vers prefs');
-        router.replace('/(protected)/(onboarding)/OnboardingPreferencesGender');
+        if (mode === 'onboarding') {
+          router.replace('/(protected)/(profile-setup)/PreferencesScreen');
+        } else {
+          Alert.alert('Succès', 'Ton genre a été mis à jour.');
+          router.back(); // ou router.replace('/profile') selon ton flow
+        }
       },
       onError: (error: any) => {
         Alert.alert(
@@ -54,11 +69,18 @@ export default function OnboardingGenderScreen() {
 
   const isSelected = (value: GenderType) => selectedGender === value;
 
+  if (mode === 'edit' && profileLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator color="#FF0050" size="large" style={{ marginTop: 40 }} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Quel est ton genre ?</Text>
-
         <Text style={styles.explanation}>
           Choisis une option. Tu pourras toujours modifier ce choix plus tard.
         </Text>
