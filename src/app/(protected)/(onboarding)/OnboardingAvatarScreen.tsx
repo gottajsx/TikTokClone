@@ -30,7 +30,7 @@ export default function OnboardingAvatarScreen() {
 
     uploadAvatar(image, {
       onSuccess: () => {
-        router.replace('/(protected)/(tabs)');
+        router.replace('/(protected)/(onboarding)/OnboardingUploadVideoScreen');
       },
     });
   };
@@ -38,7 +38,7 @@ export default function OnboardingAvatarScreen() {
   const handleSkip = () => {
     skipAvatar(undefined, {
       onSuccess: () => {
-        router.replace('/(protected)/(tabs)');
+        router.replace('/(protected)/(tabs)/OnboardingUploadVideoScreen');
       },
     });
   };
