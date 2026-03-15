@@ -1,43 +1,59 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  ActivityIndicator,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUploadProfileVideo } from '@/hooks/useUploadProfileVideo';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import { Image } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { Circle, Svg } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { useUploadProfileVideo } from '@/hooks/useUploadProfileVideo';
+import { useLocalSearchParams } from 'expo-router';
 
-const MAX_DURATION = 10; // secondes
-const STROKE_CIRCUMFERENCE = 283;
+const MAX_DURATION = 30;
+const STROKE_CIRCUMFERENCE = 2 * Math.PI * 45;
 
 export default function OnboardingVideoExpoScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
- 
+
   const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0); // 0 → MAX_DURATION (secondes)
+  const [progress, setProgress] = useState(0);
   const [facing, setFacing] = useState<'front' | 'back'>('front');
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
+  const { videoText, videoTextId } = useLocalSearchParams<{
+    videoText?: string;
+    videoTextId?: string; // expo-router passe tout en string
+  }>();
+
+  // Convertir videoTextId en number
+  const parsedVideoTextId = 
+    videoTextId && !isNaN(Number(videoTextId))
+      ? Number(videoTextId)
+      : null;
+
   const router = useRouter();
 
   const { mutate: uploadVideo, isPending } = useUploadProfileVideo();
 
-  // Lecture vidéo via expo-video
   const player = useVideoPlayer(videoUri ?? '', (p) => {
     p.loop = true;
     if (videoUri) p.play();
   });
 
-  // Nettoyage de l'animation et de l'interval à chaque changement de `recording`
   useEffect(() => {
     if (recording) {
       setProgress(0);
@@ -103,17 +119,25 @@ export default function OnboardingVideoExpoScreen() {
   }, [progressAnim]);
 
   const handleUpload = useCallback(() => {
-    if (!videoUri) return;
-    uploadVideo(videoUri, {
+    if (!videoUri || isPending) return;
+
+    uploadVideo(
+      {
+        videoUri,
+        videoText:  videoText ?? null,
+        videoTextId: parsedVideoTextId,
+      },
+      {
         onSuccess: () => {
-            console.log('Vidéo uploadée: redirection');
-            router.replace('/(protected)/(tabs)');
+          console.log('Vidéo uploadée: redirection');
+          router.replace('/(protected)/(tabs)');
         },
         onError: (error) => {
-            console.error('Erreur upload vidéo :', error);
-        }
-    });
-  }, [videoUri, uploadVideo, router]);
+          console.error('Erreur upload vidéo :', error);
+        },
+      }
+    );
+  }, [videoUri, videoText, parsedVideoTextId, uploadVideo, router, isPending]);
 
   const switchCamera = useCallback(() => {
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));
@@ -209,7 +233,6 @@ export default function OnboardingVideoExpoScreen() {
           mode="video"
         />
 
-        {/* Switch caméra */}
         <TouchableOpacity
           onPress={switchCamera}
           style={{
@@ -224,7 +247,6 @@ export default function OnboardingVideoExpoScreen() {
           <Text style={{ color: '#fff' }}>🔄</Text>
         </TouchableOpacity>
 
-        {/* Bouton record + progress ring */}
         <View
           style={{
             position: 'absolute',

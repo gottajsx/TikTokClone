@@ -43,7 +43,7 @@ export default function AvatarScreen() {
     uploadAvatar(image, {
       onSuccess: () => {
         if (mode === 'onboarding') {
-          router.replace('/(protected)/(profile-setup)/uploadVideo');
+          router.replace('/(protected)/(profile-setup)/questionPicker');
         } else {
           Alert.alert('Succès', 'Ton avatar a été mis à jour.');
           router.back();
@@ -58,7 +58,7 @@ export default function AvatarScreen() {
   const handleSkip = () => {
     skipAvatar(undefined, {
       onSuccess: () => {
-        router.replace('/(protected)/(profile-setup)/uploadVideo');
+        router.replace('/(protected)/(profile-setup)/questionPicker');
       },
       onError: (err: any) => {
         Alert.alert('Erreur', err?.message || 'Impossible de passer.');
