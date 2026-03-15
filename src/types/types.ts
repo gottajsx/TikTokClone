@@ -19,6 +19,12 @@ export type RelationshipType =
   | 'hookups'
   | 'open_to_see';
 
+export type videoType = {
+	video_url: string | null;
+	video_text: string | null;
+	video_textId: number | null;
+};
+
 export type Profile = {
   id: string;                    // uuid → string (Supabase retourne les UUID sous forme de string)
   username: string;              // text NOT NULL + unique
@@ -27,7 +33,7 @@ export type Profile = {
   bio: string | null;            // text NULL
   town: string | null;
   country: string | null;
-  video_url?: string | null;
+  video?: videoType | null;
   avatar_url?: string | null;
   created_at: string;            // timestamptz → string ISO avec timezone (ex: '2025-02-24T14:35:22.123+00')
   updated_at: string;            // idem
