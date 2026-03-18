@@ -13,7 +13,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Circle, Svg } from 'react-native-svg';
 import { useRouter } from 'expo-router';
-import { useUploadProfileVideo } from '@/hooks/useUploadProfileVideo';
+import { useUploadProfileVideo } from '@/hooks/useVideos';
 import { useLocalSearchParams } from 'expo-router';
 
 const MAX_DURATION = 30;
