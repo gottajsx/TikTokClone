@@ -34,15 +34,15 @@ export default function OnboardingVideoExpoScreen() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  const { videoText, videoTextId } = useLocalSearchParams<{
+  const { videoText, questionId } = useLocalSearchParams<{
     videoText?: string;
-    videoTextId?: string; // expo-router passe tout en string
+    questionId?: string; // expo-router passe tout en string
   }>();
 
   // Convertir videoTextId en number
   const parsedVideoTextId = 
-    videoTextId && !isNaN(Number(videoTextId))
-      ? Number(videoTextId)
+    questionId && !isNaN(Number(questionId))
+      ? Number(questionId)
       : null;
 
   const router = useRouter();
