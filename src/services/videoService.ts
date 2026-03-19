@@ -47,13 +47,16 @@ export const uploadProfileVideo = async (
 
 
 
-export const getCompatibleVideos = async (userId: string): Promise<ProfileVideo[]> => {
-  const { data, error } = await supabase.rpc("get_compatible_videos", {
-    p_user_id: userId,
-  });
+export const getCompatibleVideos = async (userId: string) => {
+  const { data, error } = await supabase
+    .schema('public')
+    .rpc("get_compatible_videos", { p_user_id: userId , p_limit: 10 });
+    
+  console.log('raw data:', JSON.stringify(data, null, 2));
+  
   if (error) {
     console.error("Error fetching compatible videos:", error);
     throw error;
   }
-  return data as ProfileVideo[];
+  return data;
 };

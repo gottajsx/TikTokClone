@@ -39,11 +39,18 @@ export const useUploadProfileVideo = () => {
 
 export const useCompatibleVideos = () => {
   const { data: user } = useCurrentUser();
+  
+  console.log('=== DEBUG useCompatibleVideos ===');
+  console.log('user?.id:', user?.id);
+
   const query = useQuery({
     queryKey: ['videos', 'compatible', user?.id],
     queryFn: async () => {
+      console.log('queryFn called with userId:', user?.id);
       if (!user?.id) throw new Error('Utilisateur non authentifié');
-      return getCompatibleVideos(user.id);
+      const result = await getCompatibleVideos(user.id);
+      console.log('getCompatibleVideos result:', JSON.stringify(result, null, 2));
+      return result;
     },
     enabled: !!user?.id,
   });

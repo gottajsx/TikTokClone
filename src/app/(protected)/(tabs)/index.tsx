@@ -1,15 +1,14 @@
 import { View, FlatList, Dimensions, ViewToken, StyleSheet, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
-import PostListItem from "@/components/PostListItem";
+//import PostListItem from "@/components/PostListItem";
+import VideoListItem from "@/components/VideoListItem";
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import FeedTab from '@/components/GenericComponents/FeedTab';
-import { useVideoPlayer } from 'expo-video';
-import { useRef, useState, useEffect } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import posts from "@assets/data/posts.json";
+import { useRef, useState } from 'react';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useMyPreferences } from '@/hooks/usePreferences';
+import { useCompatibleVideos } from '@/hooks/useVideos';
+
 
 const TABS = {
   EXPLORE: 'Explore',
@@ -22,89 +21,10 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeTab, setActiveTab] = useState(TABS.FOR_YOU);
 
-  // Chargement des données profil et préférences
+  // ✅ TOUS les hooks appelés ici, avant tout return conditionnel
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const { data: preferences, isLoading: prefsLoading } = useMyPreferences();
-
-  const isLoadingData = profileLoading || prefsLoading;
-
-  // Redirections onboarding si incomplet
-  if (isLoadingData) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-        <ActivityIndicator size="large" color="#FF0050" />
-      </View>
-    );
-  }
-
-  // Si gender manquant → OnboardingGender
-  if (!profile?.gender) {
-    return <Redirect href="/(protected)/(profile-setup)/gender?mode=onboarding" />;
-  }
-
-  // Si gender OK mais gender_preference manquant → OnboardingPreferencesGender
-  if (!preferences || preferences.gender_preferences == null || preferences.gender_preferences.length === 0) {
-    return <Redirect href="/(protected)/(profile-setup)/preferences?mode=onboarding" />;
-  }
-
-  // Player UNIQUE partagé pour TOUTE la FlatList
-  const player = useVideoPlayer(null, (p) => {
-    p.loop = true;
-    p.muted = false; // ou true par défaut
-  });
-
-  // Ref pour éviter race conditions
-  const isMountedRef = useRef(true);
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  // Change la source du player quand currentIndex change
-  useEffect(() => {
-    const currentPost = posts[currentIndex];
-    if (currentPost?.video_url) {
-      player.replaceAsync(currentPost.video_url).catch(err => {
-        console.log('replaceAsync failed:', err);
-      });
-    }
-  }, [currentIndex, player]);
-
-  // Gestion globale play/pause quand le screen est focus/unfocus
-  useFocusEffect(
-    useCallback(() => {
-      if (isMountedRef.current) {
-        try {
-          player.play();
-        } catch (err) {
-          console.log('Global play failed:', err);
-        }
-      }
-
-      return () => {
-        if (isMountedRef.current) {
-          try {
-            player.pause();
-          } catch (err) {
-            console.log('Global pause failed:', err);
-          }
-        }
-      };
-    }, [player])
-  );
-
-  // Listener erreurs player (correction : 'statusChange' au lieu de 'error')
-  useEffect(() => {
-    const sub = player.addListener('statusChange', (evt) => {
-      if (evt?.error) {
-        console.error('Player error:', evt.error);
-      }
-    });
-
-    return () => sub.remove();
-  }, [player]);
+  const { videos, loading: videosLoading, error } = useCompatibleVideos();
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
@@ -113,11 +33,43 @@ export default function HomeScreen() {
     }
   });
 
-  console.log("currentIndex:", currentIndex);
+
+  // ✅ Debug
+  console.log('=== DEBUG VIDEOS ===');
+  console.log('loading:', videosLoading);
+  console.log('error:', error);
+  console.log('videos count:', videos?.length);
+  console.log('videos data:', JSON.stringify(videos, null, 2));
+
+  // ✅ Returns conditionnels APRÈS tous les hooks
+  const isLoadingData = profileLoading || prefsLoading;
+
+  if (isLoadingData) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#FF0050" />
+      </View>
+    );
+  }
+
+  if (!profile?.gender) {
+    return <Redirect href="/(protected)/(profile-setup)/gender?mode=onboarding" />;
+  }
+
+  if (!preferences || preferences.gender_preferences == null || preferences.gender_preferences.length === 0) {
+    return <Redirect href="/(protected)/(profile-setup)/preferences?mode=onboarding" />;
+  }
+
+  if (videosLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#FF0050" />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Barre supérieure */}
       <View style={styles.topBar}>
         <MaterialIcons name="live-tv" size={24} color="white" />
         <View style={styles.navigationBar}>
@@ -128,13 +80,13 @@ export default function HomeScreen() {
         <Ionicons name="search" size={24} color="white" />
       </View>
 
-      {/* FlatList optimisée */}
       <FlatList
-        data={posts}
+        data={videos}
         renderItem={({ item, index }) => (
-          <PostListItem postItem={item} isActive={index === currentIndex} />
+          <VideoListItem videoItem={item} isActive={index === currentIndex} />
+
         )}
-        keyExtractor={(item, index) => item.id?.toString() ?? index.toString()}
+        keyExtractor={(item, index) => item.profile_id ?? index.toString()}
         showsVerticalScrollIndicator={false}
         snapToInterval={height - 80}
         decelerationRate="fast"
