@@ -22,7 +22,7 @@ export type RelationshipType =
 export type videoType = {
 	video_url: string | null;
 	video_text: string | null;
-	video_text_id: number | null;
+	question_id: number | null;
 };
 
 export type ProfileVideo = {

@@ -125,7 +125,7 @@ export default function OnboardingVideoExpoScreen() {
       {
         videoUri,
         videoText:  videoText ?? null,
-        videoTextId: parsedVideoTextId,
+        questionId: parsedVideoTextId,
       },
       {
         onSuccess: () => {

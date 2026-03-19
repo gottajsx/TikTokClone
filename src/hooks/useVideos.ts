@@ -5,7 +5,7 @@ import { useCurrentUser } from './useCurrentUser';
 type UploadProfileVideoParams = {
   videoUri: string;
   videoText?: string | null;
-  videoTextId?: number | null;
+  questionId?: number | null;
 };
 
 export const useUploadProfileVideo = () => {
@@ -15,10 +15,10 @@ export const useUploadProfileVideo = () => {
   return useMutation({
     mutationKey: ['upload-profile-video'],
 
-    mutationFn: async ({ videoUri, videoText, videoTextId }: UploadProfileVideoParams) => {
+    mutationFn: async ({ videoUri, videoText, questionId }: UploadProfileVideoParams) => {
       if (!user?.id) throw new Error('Utilisateur non authentifié');
 
-      return uploadProfileVideo(user.id, videoUri, videoText, videoTextId);
+      return uploadProfileVideo(user.id, videoUri, videoText, questionId);
     },
 
     onSuccess: (videoUrl) => {

@@ -6,7 +6,7 @@ export const uploadProfileVideo = async (
   userId: string,
   videoUri: string,
   videoText?: string | null,
-  videoTextId?: number | null
+  questionId?: number | null
 ): Promise<string> => {
   try {
     const filePath = `${userId}/profile-video.mp4`;
@@ -33,7 +33,7 @@ export const uploadProfileVideo = async (
       .update({
         video_url: videoUrl,
         video_text: videoText ?? null,
-        video_text_id: videoTextId ?? null,
+        question_id: questionId ?? null,
       })
       .eq('id', userId);
     if (profileError) throw profileError;
