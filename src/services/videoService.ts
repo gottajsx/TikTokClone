@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ProfileVideo } from '@/types/types';
 
 const BUCKET = 'videos';
 
@@ -46,14 +47,13 @@ export const uploadProfileVideo = async (
 
 
 
-export const getCompatibleVideos = async (userId: string) => {
-  const { data, error } = await supabase.rpc(
-    "get_compatible_videos",
-    { p_user_id: userId }
-  );
+export const getCompatibleVideos = async (userId: string): Promise<ProfileVideo[]> => {
+  const { data, error } = await supabase.rpc("get_compatible_videos", {
+    p_user_id: userId,
+  });
   if (error) {
     console.error("Error fetching compatible videos:", error);
     throw error;
   }
-  return data;
+  return data as ProfileVideo[];
 };
