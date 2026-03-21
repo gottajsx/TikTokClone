@@ -2,8 +2,8 @@ import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-nati
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileVideo } from "@/types/types";
-import { useFocusEffect } from "expo-router";
 import { useEffect, useRef } from "react";
+import { useLike } from "@/hooks/useLike";
 
 type VideoItemProps = {
   videoItem: ProfileVideo;
@@ -12,8 +12,10 @@ type VideoItemProps = {
 
 export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
   const { height } = Dimensions.get('window');
-  const { username, video_url, video_text, gender } = videoItem;
-  
+  const { profile_id, username, video_url, video_text, gender } = videoItem;
+
+  const { isLiked, likesCount, toggle, isLoading } = useLike(profile_id);
+
   const player = useVideoPlayer(video_url, player => {
     player.loop = true;
     player.muted = false;
@@ -27,7 +29,7 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
     };
   }, []);
 
-  useEffect(() => {   
+  useEffect(() => {
     if (!player) return;
     if (isActive) {
       if (isMountedRef.current) {
@@ -35,7 +37,7 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
           player.play();
         } catch (err) {
           console.log('Play failed:', err);
-        }  
+        }
       }
     } else {
       if (isMountedRef.current) {
@@ -43,7 +45,7 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
           player.pause();
         } catch (err) {
           console.log('Pause failed:', err);
-        }  
+        }
       }
     }
   }, [isActive, player]);
@@ -60,17 +62,25 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
 
   return (
     <View style={{ height: height - 80, backgroundColor: '#000' }}>
-      <VideoView 
+      <VideoView
         style={StyleSheet.absoluteFill}
-        player={player} 
-        contentFit="cover" 
+        player={player}
+        contentFit="cover"
         allowsPictureInPicture
       />
 
       <View style={styles.interactionBar}>
-        <TouchableOpacity style={styles.interactionButton} onPress={() => console.log('Like Pressed')}>
-          <Ionicons name="heart" size={33} color="#fff" />
-          <Text style={styles.interactionText}>{0}</Text>
+        <TouchableOpacity
+          style={styles.interactionButton}
+          onPress={toggle}
+          disabled={isLoading}
+        >
+          <Ionicons
+            name="heart"
+            size={33}
+            color={isLiked ? '#FF2D55' : '#fff'}
+          />
+          <Text style={styles.interactionText}>{likesCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.interactionButton} onPress={() => console.log('Comment Pressed')}>
