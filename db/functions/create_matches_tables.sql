@@ -75,21 +75,64 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_user_a_id      uuid;
+  v_user_b_id      uuid;
+  v_match_id       uuid;
+  v_conversation_id uuid;
+  v_username_a     text;
+  v_username_b     text;
 begin
   -- Vérifie si le like inverse existe déjà
-  if exists (
+  if not exists (
     select 1 from likes
     where liker_id = new.liked_id
       and liked_id  = new.liker_id
   ) then
-    -- Insère le match en respectant la contrainte user_a_id < user_b_id
-    insert into matches (user_a_id, user_b_id)
-    values (
-      least(new.liker_id, new.liked_id),
-      greatest(new.liker_id, new.liked_id)
-    )
-    on conflict do nothing; -- idempotent si le match existe déjà
+    return new; -- pas de match réciproque, rien à faire
   end if;
+
+  -- Détermine user_a et user_b (contrainte user_a < user_b)
+  v_user_a_id := least(new.liker_id, new.liked_id);
+  v_user_b_id := greatest(new.liker_id, new.liked_id);
+
+  -- Crée le match (idempotent)
+  insert into matches (user_a_id, user_b_id)
+  values (v_user_a_id, v_user_b_id)
+  on conflict do nothing
+  returning id into v_match_id;
+
+  -- Si le match existait déjà, rien de plus à faire
+  if v_match_id is null then
+    return new;
+  end if;
+
+  -- Crée la conversation liée au match
+  insert into conversations (match_id)
+  values (v_match_id)
+  returning id into v_conversation_id;
+
+  -- Récupère les usernames pour personnaliser les notifications
+  select username into v_username_b from profiles where id = v_user_b_id;
+  select username into v_username_a from profiles where id = v_user_a_id;
+
+  -- Notifie user_a
+  insert into notifications (user_id, type, content, related_match_id)
+  values (
+    v_user_a_id,
+    'match',
+    'Vous avez un match avec ' || v_username_b,
+    v_match_id
+  );
+
+  -- Notifie user_b
+  insert into notifications (user_id, type, content, related_match_id)
+  values (
+    v_user_b_id,
+    'match',
+    'Vous avez un match avec ' || v_username_a,
+    v_match_id
+  );
 
   return new;
 end;
