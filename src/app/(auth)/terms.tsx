@@ -20,32 +20,33 @@ const markdownStyles = StyleSheet.create({
   heading1: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#111',
+    color: '#fff',
     marginTop: 24,
     marginBottom: 16,
   },
   heading2: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#222',
+    color: '#fff',
     marginTop: 20,
     marginBottom: 12,
   },
   heading3: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#ddd',
     marginTop: 16,
     marginBottom: 8,
   },
   paragraph: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#333',
+    color: '#ccc',
     marginBottom: 16,
   },
   strong: {
     fontWeight: '700',
+    color: '#fff',
   },
   em: {
     fontStyle: 'italic',
@@ -76,9 +77,7 @@ const markdownStyles = StyleSheet.create({
 export default function TermsScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-
   const { data: terms, isLoading: termsLoading, isError: termsError } = useActiveTerms(isAuthenticated);
-
   const { mutateAsync: acceptTermsAsync, isPending: isAccepting } = useAcceptTerms();
 
   const handleAccept = async () => {
@@ -86,10 +85,8 @@ export default function TermsScreen() {
       Alert.alert('Erreur', 'Aucune version des conditions trouvée');
       return;
     }
-
     try {
       await acceptTermsAsync(terms.version);
-      // Petit délai pour laisser le cache se propager (souvent utile avec react-query + Supabase)
       await new Promise(resolve => setTimeout(resolve, 400));
       router.replace('/(protected)/(tabs)');
     } catch (err: any) {
@@ -165,7 +162,6 @@ export default function TermsScreen() {
         >
           {terms.content}
         </Markdown>
-
         <View style={{ height: 120 }} />
       </ScrollView>
 
@@ -197,28 +193,28 @@ export default function TermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0a0a0a',
   },
   header: {
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#222',
   },
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#111',
+    color: '#fff',
   },
   version: {
     fontSize: 15,
-    color: '#666',
+    color: '#aaa',
     marginTop: 6,
   },
   date: {
     fontSize: 14,
-    color: '#888',
+    color: '#777',
     marginTop: 4,
   },
   scroll: {
@@ -235,7 +231,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 20,
     fontSize: 16,
-    color: '#666',
+    color: '#aaa',
   },
   errorText: {
     fontSize: 18,
@@ -246,7 +242,7 @@ const styles = StyleSheet.create({
   },
   errorSubText: {
     fontSize: 15,
-    color: '#666',
+    color: '#aaa',
     textAlign: 'center',
   },
   footer: {
@@ -254,8 +250,8 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 34,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderTopColor: '#222',
+    backgroundColor: '#0a0a0a',
   },
   button: {
     flex: 1,
@@ -269,7 +265,9 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   declineButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1f1f1f',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   acceptText: {
     color: '#ffffff',
@@ -277,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   declineText: {
-    color: '#333',
+    color: '#ccc',
     fontSize: 17,
     fontWeight: '600',
   },
