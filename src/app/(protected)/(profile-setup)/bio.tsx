@@ -24,16 +24,17 @@ const suggestions = [
 
 export default function BioScreen() {
   const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
+
   const [bio, setBio] = useState('');
   const [inputHeight, setInputHeight] = useState(120);
 
   const router = useRouter();
   const { mutate, isPending } = useUpdateProfileBio();
 
-  // Récupération de la bio actuelle si mode === 'edit'
+  // Récupération de la bio actuelle en mode edit
   const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
 
-  // Pré-remplir la bio existante en mode edit
+  // Pré-remplir la bio existante
   useEffect(() => {
     if (mode === 'edit' && profile?.bio) {
       setBio(profile.bio);
@@ -50,7 +51,7 @@ export default function BioScreen() {
           router.replace('/(protected)/(profile-setup)/town?mode=onboarding');
         } else {
           Alert.alert('Succès', 'Ta bio a été mise à jour.');
-          router.back(); // ou router.replace('/profile') selon ton flow
+          router.back();
         }
       },
       onError: (error: any) => {
@@ -74,8 +75,8 @@ export default function BioScreen() {
 
   if (mode === 'edit' && profileLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#111" size="large" style={{ marginTop: 40 }} />
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF0050" />
       </SafeAreaView>
     );
   }
@@ -83,21 +84,25 @@ export default function BioScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Ajoute une bio</Text>
+        <Text style={styles.title}>
+          {mode === 'edit' ? 'Modifie ta bio' : 'Ajoute une bio'}
+        </Text>
+
         <Text style={styles.subtitle}>
           {mode === 'edit'
             ? 'Modifie ta bio actuelle ci-dessous.'
             : 'Une petite phrase peut aider à briser la glace.'}
         </Text>
 
-        {/* INPUT AUTO RESIZE */}
+        {/* Input auto-resize */}
         <TextInput
           style={[styles.input, { height: inputHeight }]}
           placeholder="Écris une courte bio..."
+          placeholderTextColor="#888"
           value={bio}
           multiline
           maxLength={MAX_LENGTH}
-          onChangeText={(text) => setBio(text)}
+          onChangeText={setBio}
           onContentSizeChange={(e) =>
             setInputHeight(Math.max(120, e.nativeEvent.contentSize.height))
           }
@@ -108,7 +113,7 @@ export default function BioScreen() {
           {remaining} caractères restants
         </Text>
 
-        {/* SUGGESTIONS */}
+        {/* Suggestions */}
         <View style={styles.suggestionsContainer}>
           {suggestions.map((s) => (
             <TouchableOpacity
@@ -121,7 +126,7 @@ export default function BioScreen() {
           ))}
         </View>
 
-        {/* BOUTONS */}
+        {/* Boutons */}
         <View style={styles.buttons}>
           <TouchableOpacity
             style={[
@@ -159,42 +164,94 @@ export default function BioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
-  content: { flex: 1, padding: 24 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 6 },
-  subtitle: { fontSize: 16, color: '#666', marginBottom: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#999',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
   input: {
+    backgroundColor: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: '#333',
     borderRadius: 18,
     padding: 18,
     fontSize: 16,
-    backgroundColor: '#FAFAFA',
+    color: '#fff',
+    textAlignVertical: 'top',
   },
-  counter: { marginTop: 8, textAlign: 'right', color: '#777' },
-  suggestionsContainer: { marginTop: 20, gap: 10 },
+  counter: {
+    marginTop: 8,
+    textAlign: 'right',
+    color: '#777',
+    fontSize: 14,
+  },
+  suggestionsContainer: {
+    marginTop: 24,
+    gap: 10,
+  },
   suggestion: {
-    backgroundColor: '#F2F2F2',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    backgroundColor: '#1f1f1f',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 20,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  suggestionText: { fontSize: 14, color: '#444' },
-  buttons: { marginTop: 40, gap: 12 },
+  suggestionText: {
+    fontSize: 14,
+    color: '#ddd',
+  },
+  buttons: {
+    marginTop: 40,
+    gap: 12,
+  },
   primaryButton: {
-    backgroundColor: '#111',
-    padding: 16,
+    backgroundColor: '#FF0050',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
   },
-  primaryButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
   secondaryButton: {
-    backgroundColor: '#DDD',
-    padding: 16,
+    backgroundColor: '#1f1f1f',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  disabledButton: { opacity: 0.4 },
+  secondaryButtonText: {
+    color: '#ccc',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.4,
+  },
 });
