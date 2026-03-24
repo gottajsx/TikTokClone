@@ -20,6 +20,7 @@ type CitySuggestion = {
 
 export default function TownScreen() {
   const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
+
   const router = useRouter();
   const { mutate, isPending } = useUpdateProfileLocation();
 
@@ -29,10 +30,10 @@ export default function TownScreen() {
   const [selectedTown, setSelectedTown] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Récupération du profil si mode edit
+  // Récupération du profil en mode edit
   const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
 
-  // Préremplissage si mode edit
+  // Pré-remplissage en mode edit
   useEffect(() => {
     if (mode === 'edit' && profile) {
       if (profile.town) {
@@ -42,13 +43,13 @@ export default function TownScreen() {
     }
   }, [mode, profile]);
 
-  // 🔹 Debounce pour la recherche
+  // Debounce pour la recherche
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(handler);
   }, [query]);
 
-  // 🔹 Recherche villes
+  // Recherche villes via API data.gouv.fr
   useEffect(() => {
     if (debouncedQuery.length < 3) {
       setSuggestions([]);
@@ -62,12 +63,14 @@ export default function TownScreen() {
           `https://api-adresse.data.gouv.fr/search/?q=${debouncedQuery}&type=municipality&limit=5`
         );
         const json = await res.json();
+
         const cities = Array.isArray(json.features)
           ? json.features.map((f: any) => ({
               name: f.properties.city,
               postcode: f.properties.postcode,
             }))
           : [];
+
         setSuggestions(cities);
       } catch (err) {
         console.error('Erreur recherche ville', err);
@@ -87,6 +90,7 @@ export default function TownScreen() {
 
   const handleValidate = () => {
     if (!selectedTown) return;
+
     mutate(
       { town: selectedTown, country: 'France' },
       {
@@ -105,7 +109,7 @@ export default function TownScreen() {
   const handleSkip = () => {
     mutate(
       { town: null, country: null },
-      { onSuccess: () => router.replace('/(protected)/(profile-setup)/avatar') }
+      { onSuccess: () => router.replace('/(protected)/(profile-setup)/avatar?mode=onboarding') }
     );
   };
 
@@ -113,8 +117,8 @@ export default function TownScreen() {
 
   if (mode === 'edit' && profileLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#000" size="large" style={{ marginTop: 40 }} />
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF0050" />
       </SafeAreaView>
     );
   }
@@ -123,6 +127,7 @@ export default function TownScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Où habites-tu ?</Text>
+
         <Text style={styles.subtitle}>
           {mode === 'edit'
             ? 'Modifie ta ville actuelle si besoin.'
@@ -132,14 +137,15 @@ export default function TownScreen() {
         <TextInput
           style={styles.input}
           placeholder="Tape le nom de ta ville"
+          placeholderTextColor="#888"
           value={query}
           onChangeText={(text) => {
             setQuery(text);
-            setSelectedTown(null);
+            setSelectedTown(null); // Réinitialise la sélection si on retape
           }}
         />
 
-        {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
+        {loading && <ActivityIndicator style={{ marginTop: 12 }} color="#FF0050" />}
 
         <FlatList
           style={styles.list}
@@ -202,46 +208,97 @@ export default function TownScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { flex: 1, padding: 24 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', marginBottom: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#999',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
   input: {
+    backgroundColor: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#333',
     borderRadius: 14,
-    padding: 14,
+    padding: 16,
+    fontSize: 16,
+    color: '#fff',
     marginBottom: 12,
   },
-  list: { maxHeight: 220 },
+  list: {
+    maxHeight: 260,
+    marginTop: 8,
+  },
   card: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    backgroundColor: '#1f1f1f',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  selectedCard: { backgroundColor: '#000' },
-  cardText: { fontSize: 16, color: '#333' },
-  selectedCardText: { color: '#fff', fontWeight: '600' },
-  buttons: { marginTop: 'auto', gap: 12 },
+  selectedCard: {
+    backgroundColor: '#FF0050',
+    borderColor: '#FF0050',
+  },
+  cardText: {
+    fontSize: 16,
+    color: '#ddd',
+    textAlign: 'center',
+  },
+  selectedCardText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  buttons: {
+    marginTop: 'auto',
+    gap: 12,
+    paddingBottom: 20,
+  },
   primaryButton: {
-    backgroundColor: '#000',
-    padding: 16,
+    backgroundColor: '#FF0050',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
   },
-  primaryButtonText: { color: '#fff', fontWeight: '600' },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
   secondaryButton: {
-    backgroundColor: '#e6e6e6',
-    padding: 16,
+    backgroundColor: '#1f1f1f',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  secondaryButtonText: { fontWeight: '600' },
-  disabledButton: { opacity: 0.4 },
+  secondaryButtonText: {
+    color: '#ccc',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.4,
+  },
 });
