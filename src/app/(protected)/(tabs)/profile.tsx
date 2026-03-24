@@ -53,9 +53,24 @@ export default function ProfileScreen() {
         {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Mon Profil</Text>
-          <TouchableOpacity onPress={() => router.push("/(protected)/(profile-setup)/settings")}>
-            <Ionicons name="settings-outline" size={26} color="#FF0050" />
-          </TouchableOpacity>
+
+          <View style={styles.headerButtons}>
+            {/* Bouton Modifier le profil */}
+            <TouchableOpacity 
+              onPress={() => router.push('/(protected)/edit-profile')}   // ← adapte le chemin si besoin
+              style={styles.iconButton}
+            >
+              <Ionicons name="create-outline" size={26} color="#FF0050" />
+            </TouchableOpacity>
+
+            {/* Bouton Paramètres */}
+            <TouchableOpacity 
+              onPress={() => router.push("/(protected)/(profile-setup)/settings")}
+              style={styles.iconButton}
+            >
+              <Ionicons name="settings-outline" size={26} color="#FF0050" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* AVATAR */}
@@ -84,7 +99,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* VIDEOS SECONDAIRES */}
+        {/* VIDEOS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mes vidéos</Text>
           <ScrollView
@@ -108,7 +123,6 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             ))}
 
-            {/* Bouton Ajouter */}
             <TouchableOpacity style={styles.addVideo}>
               <Ionicons name="add" size={36} color="#666" />
             </TouchableOpacity>
@@ -238,6 +252,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  iconButton: {
+    padding: 4,
+  },
+
   avatarSection: {
     alignItems: 'center',
     marginTop: 10,
