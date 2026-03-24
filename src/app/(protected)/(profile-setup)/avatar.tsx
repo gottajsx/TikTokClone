@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,15 +8,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AvatarScreen() {
   const { mode } = useLocalSearchParams<{ mode?: 'edit' | 'onboarding' }>();
+
   const [image, setImage] = useState<string | null>(null);
 
   const { mutate: uploadAvatar, isPending: uploading } = useUploadAvatar();
   const { mutate: skipAvatar, isPending: skipping } = useSkipAvatar();
 
-  // Récupération du profil si mode edit
+  // Récupération du profil en mode édition
   const { data: profile, isLoading: profileLoading } = useMyProfile(mode === 'edit');
 
-  // Préremplissage si avatar existant en mode edit
+  // Pré-remplissage de l'avatar existant en mode edit
   useEffect(() => {
     if (mode === 'edit' && profile?.avatar_url) {
       setImage(profile.avatar_url);
@@ -70,79 +71,137 @@ export default function AvatarScreen() {
 
   if (mode === 'edit' && profileLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#000" />
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF0050" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      <Text style={{ fontSize: 28, fontWeight: '600', marginBottom: 20 }}>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>
         {mode === 'edit' ? 'Modifie ton avatar' : 'Ajoute une photo'}
       </Text>
 
-      <TouchableOpacity
-        onPress={pickImage}
-        style={{
-          width: 160,
-          height: 160,
-          borderRadius: 80,
-          backgroundColor: '#eee',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: 30,
-        }}
-      >
+      <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
         {image ? (
-          <Image source={{ uri: image }} style={{ width: 160, height: 160, borderRadius: 80 }} />
+          <Image source={{ uri: image }} style={styles.avatarImage} />
         ) : (
-          <Text>Choisir</Text>
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderText}>Choisir une photo</Text>
+          </View>
         )}
       </TouchableOpacity>
 
-      {/* bouton valider */}
+      {/* Bouton Valider */}
       <TouchableOpacity
         disabled={!image || loading}
         onPress={handleValidate}
-        style={{
-          width: '100%',
-          padding: 16,
-          borderRadius: 12,
-          backgroundColor: image ? '#FF4458' : '#ccc',
-          marginBottom: 12,
-          alignItems: 'center',
-        }}
+        style={[styles.button, styles.validateButton, (!image || loading) && styles.buttonDisabled]}
       >
         {uploading ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{ color: 'white', fontWeight: '600' }}>
+          <Text style={styles.buttonText}>
             {mode === 'edit' ? 'Mettre à jour' : 'Valider la photo'}
           </Text>
         )}
       </TouchableOpacity>
 
-      {/* bouton skip */}
+      {/* Bouton Passer (uniquement en onboarding) */}
       {mode === 'onboarding' && (
         <TouchableOpacity
           disabled={!!image || loading}
           onPress={handleSkip}
-          style={{
-            width: '100%',
-            padding: 16,
-            borderRadius: 12,
-            backgroundColor: !image ? '#000' : '#ccc',
-            alignItems: 'center',
-          }}
+          style={[styles.button, styles.skipButton, (!!image || loading) && styles.buttonDisabled]}
         >
           {skipping ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={{ color: 'white', fontWeight: '600' }}>Passer</Text>
+            <Text style={styles.skipText}>Passer</Text>
           )}
         </TouchableOpacity>
       )}
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  avatarContainer: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 50,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  avatarImage: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  placeholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#888',
+    fontSize: 15,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  button: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  validateButton: {
+    backgroundColor: '#FF0050',
+  },
+  skipButton: {
+    backgroundColor: '#1f1f1f',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  buttonDisabled: {
+    backgroundColor: '#333',
+    borderColor: '#444',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  skipText: {
+    color: '#ccc',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});
