@@ -46,7 +46,7 @@ export default function QuestionPicker() {
   const handleAnswer = () => {
     if (!currentQuestion) return;
     router.replace({
-      pathname: '/(protected)/(profile-setup)/uploadVideo',
+      pathname: '/(protected)/(tabs)/uploadVideo',
       params: {
         videoText: currentQuestion.video_text,
         questionId: currentQuestion.id,

@@ -26,9 +26,9 @@ export default function TabsLayout() {
             />
             
             <Tabs.Screen 
-                name='newPost' 
+                name='uploadVideo' 
                 options={{
-                    title: 'New Post',
+                    title: 'Upload Video',
                     headerShown: false,
                     tabBarIcon: ({ color }) => (
                         <Feather name="plus-square" size={24} color={color} />
