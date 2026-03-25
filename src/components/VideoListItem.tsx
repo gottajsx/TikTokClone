@@ -65,17 +65,17 @@ export default function VideoListItem({ videoItem, isActive, height }: VideoItem
             size={33}
             color={isLiked ? '#FF2D55' : '#fff'}
           />
-          <Text style={styles.interactionText}>{likesCount}</Text>
+          <Text style={styles.interactionText}/>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.interactionButton} onPress={() => console.log('Comment Pressed')}>
           <Ionicons name="chatbubble" size={30} color="#fff" />
-          <Text style={styles.interactionText}>{0}</Text>
+          <Text style={styles.interactionText}/>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.interactionButton} onPress={() => console.log('Share Pressed')}>
           <Ionicons name="arrow-redo" size={33} color="#fff" />
-          <Text style={styles.interactionText}>{0}</Text>
+          <Text style={styles.interactionText}/>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.avatar} onPress={() => console.log('Profile Pressed')}>
