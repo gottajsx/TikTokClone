@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileVideo } from "@/types/types";
@@ -8,12 +8,11 @@ import { useLike } from "@/hooks/useLike";
 type VideoItemProps = {
   videoItem: ProfileVideo;
   isActive: boolean;
+  height: number; // ✅ number (minuscule), pas Number
 }
 
-export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
-  const { height } = Dimensions.get('window');
+export default function VideoListItem({ videoItem, isActive, height }: VideoItemProps) {
   const { profile_id, username, video_url, video_text, gender } = videoItem;
-
   const { isLiked, likesCount, toggle, isLoading } = useLike(profile_id);
 
   const player = useVideoPlayer(video_url, player => {
@@ -22,6 +21,7 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
   });
 
   const isMountedRef = useRef(true);
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -29,39 +29,24 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
     };
   }, []);
 
+  // ✅ Un seul useEffect pour play/pause + replay, évite les conflits
   useEffect(() => {
-    if (!player) return;
-    if (isActive) {
-      if (isMountedRef.current) {
-        try {
-          player.play();
-        } catch (err) {
-          console.log('Play failed:', err);
-        }
-      }
-    } else {
-      if (isMountedRef.current) {
-        try {
-          player.pause();
-        } catch (err) {
-          console.log('Pause failed:', err);
-        }
-      }
-    }
-  }, [isActive, player]);
+    if (!player || !isMountedRef.current) return;
 
-  useEffect(() => {
-    if (isActive && player) {
-      try {
+    try {
+      if (isActive) {
         player.replay();
-      } catch(err) {
-        console.log('Replay failed:', err);
+      } else {
+        player.pause();
       }
+    } catch (err) {
+      console.log('Player action failed:', err);
     }
   }, [isActive, player]);
 
   return (
-    <View style={{ height: height - 80, backgroundColor: '#000' }}>
+    // ✅ width: '100%' entre guillemets (string), pas width:100%
+    <View style={{ height, width: '100%', backgroundColor: '#000' }}>
       <VideoView
         style={StyleSheet.absoluteFill}
         player={player}
@@ -105,7 +90,7 @@ export default function VideoListItem({ videoItem, isActive }: VideoItemProps) {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   interactionBar: {
@@ -113,16 +98,16 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 20,
     alignItems: 'center',
-    gap: 25
+    gap: 25,
   },
   interactionButton: {
     alignItems: 'center',
-    gap: 5
+    gap: 5,
   },
   interactionText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   avatar: {
     width: 35,
@@ -130,18 +115,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   avatarText: {
     fontSize: 25,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   videoInfo: {
     position: 'absolute',
     bottom: 20,
     left: 20,
     right: 100,
-    gap: 5
+    gap: 5,
   },
   username: {
     color: '#fff',
@@ -155,5 +140,5 @@ const styles = StyleSheet.create({
   gender: {
     color: '#aaa',
     fontSize: 12,
-  }
+  },
 });

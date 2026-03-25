@@ -1,10 +1,17 @@
-import { View, FlatList, Dimensions, ViewToken, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  FlatList, 
+  useWindowDimensions,
+  ViewToken, 
+  StyleSheet, 
+  ActivityIndicator 
+} from 'react-native';
 import { Redirect } from 'expo-router';
-//import PostListItem from "@/components/PostListItem";
 import VideoListItem from "@/components/VideoListItem";
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import FeedTab from '@/components/GenericComponents/FeedTab';
 import { useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMyProfile } from '@/hooks/useProfile';
 import { useMyPreferences } from '@/hooks/usePreferences';
 import { useCompatibleVideos } from '@/hooks/useVideos';
@@ -17,7 +24,8 @@ const TABS = {
 };
 
 export default function HomeScreen() {
-  const { height } = Dimensions.get('window');
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeTab, setActiveTab] = useState(TABS.FOR_YOU);
 
@@ -25,6 +33,8 @@ export default function HomeScreen() {
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const { data: preferences, isLoading: prefsLoading } = useMyPreferences();
   const { videos, loading: videosLoading, error } = useCompatibleVideos();
+
+  const itemHeight = height - insets.top - insets.bottom;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
@@ -83,8 +93,11 @@ export default function HomeScreen() {
       <FlatList
         data={videos}
         renderItem={({ item, index }) => (
-          <VideoListItem videoItem={item} isActive={index === currentIndex} />
-
+          <VideoListItem 
+            videoItem={item} 
+            isActive={index === currentIndex} 
+            height={itemHeight}
+          />
         )}
         keyExtractor={(item, index) => item.profile_id ?? index.toString()}
         showsVerticalScrollIndicator={false}
@@ -92,6 +105,11 @@ export default function HomeScreen() {
         decelerationRate="fast"
         disableIntervalMomentum
         pagingEnabled
+        getItemLayout={(_, index) => ({
+          length: itemHeight,
+          offset: itemHeight * index,
+          index,
+        })}
         onViewableItemsChanged={onViewableItemsChanged.current}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         windowSize={3}
