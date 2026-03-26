@@ -44,5 +44,6 @@ yarn-error.*
 # medias
 *.mp4
 
+code/
 claude/
 supabase/
