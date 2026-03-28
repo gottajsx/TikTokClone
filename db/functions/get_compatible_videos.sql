@@ -7,11 +7,12 @@ RETURNS TABLE (
   username text,
   gender text,
   video_url text,
-  video_text text
+  video_text text,
+  avatar_url text  -- 👈 ajout
 )
 LANGUAGE sql
 STABLE
-SECURITY DEFINER  -- ← ajoute cette ligne
+SECURITY DEFINER
 AS $$
 WITH me AS (
   SELECT 
@@ -22,13 +23,13 @@ WITH me AS (
   LEFT JOIN preferences pref ON pref.user_id = p.id
   WHERE p.id = p_user_id
 )
-
 SELECT
   p.id,
   p.username,
   p.gender,
   p.video_url,
-  p.video_text
+  p.video_text,
+  p.avatar_url  -- 👈 ajout
 FROM profiles p
 JOIN preferences pref ON pref.user_id = p.id
 JOIN me ON true
@@ -37,6 +38,5 @@ WHERE
   AND p.video_url IS NOT NULL
   AND p.gender = ANY(me.gender_preferences)
   AND me.gender = ANY(pref.gender_preferences)
-
 LIMIT p_limit;
 $$;
