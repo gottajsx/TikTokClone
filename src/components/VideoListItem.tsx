@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native"; // 👈 Image ajouté
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileVideo } from "@/types/types";
@@ -8,11 +8,11 @@ import { useLike } from "@/hooks/useLike";
 type VideoItemProps = {
   videoItem: ProfileVideo;
   isActive: boolean;
-  height: number; // ✅ number (minuscule), pas Number
+  height: number;
 }
 
 export default function VideoListItem({ videoItem, isActive, height }: VideoItemProps) {
-  const { profile_id, username, video_url, video_text, gender } = videoItem;
+  const { profile_id, username, video_url, video_text, gender, avatar_url } = videoItem; // 👈 avatar_url
   const { isLiked, likesCount, toggle, isLoading } = useLike(profile_id);
 
   const player = useVideoPlayer(video_url, player => {
@@ -29,10 +29,8 @@ export default function VideoListItem({ videoItem, isActive, height }: VideoItem
     };
   }, []);
 
-  // ✅ Un seul useEffect pour play/pause + replay, évite les conflits
   useEffect(() => {
     if (!player || !isMountedRef.current) return;
-
     try {
       if (isActive) {
         player.replay();
@@ -45,7 +43,6 @@ export default function VideoListItem({ videoItem, isActive, height }: VideoItem
   }, [isActive, player]);
 
   return (
-    // ✅ width: '100%' entre guillemets (string), pas width:100%
     <View style={{ height, width: '100%', backgroundColor: '#000' }}>
       <VideoView
         style={StyleSheet.absoluteFill}
@@ -55,16 +52,8 @@ export default function VideoListItem({ videoItem, isActive, height }: VideoItem
       />
 
       <View style={styles.interactionBar}>
-        <TouchableOpacity
-          style={styles.interactionButton}
-          onPress={toggle}
-          disabled={isLoading}
-        >
-          <Ionicons
-            name="heart"
-            size={33}
-            color={isLiked ? '#FF2D55' : '#fff'}
-          />
+        <TouchableOpacity style={styles.interactionButton} onPress={toggle} disabled={isLoading}>
+          <Ionicons name="heart" size={33} color={isLiked ? '#FF2D55' : '#fff'} />
           <Text style={styles.interactionText}/>
         </TouchableOpacity>
 
@@ -78,8 +67,13 @@ export default function VideoListItem({ videoItem, isActive, height }: VideoItem
           <Text style={styles.interactionText}/>
         </TouchableOpacity>
 
+        {/* 👇 Avatar remplacé */}
         <TouchableOpacity style={styles.avatar} onPress={() => console.log('Profile Pressed')}>
-          <Text style={styles.avatarText}>{username?.charAt(0).toUpperCase()}</Text>
+          {avatar_url ? (
+            <Image source={{ uri: avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>{username?.charAt(0).toUpperCase()}</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -116,6 +110,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // 👈 important pour que l'image respecte le borderRadius
+  },
+  avatarImage: { // 👈 nouveau style
+    width: 35,
+    height: 35,
   },
   avatarText: {
     fontSize: 25,
