@@ -47,3 +47,5 @@ yarn-error.*
 code/
 claude/
 supabase/
+
+*.zip
