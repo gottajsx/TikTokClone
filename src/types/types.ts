@@ -31,6 +31,7 @@ export type ProfileVideo = {
   gender: string;
   video_url: string;
   video_text: string;
+  avatar_url: string | null;
 };
 
 export type Profile = {
