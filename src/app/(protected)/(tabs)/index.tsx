@@ -5,7 +5,7 @@ import {
   StyleSheet, 
   ActivityIndicator 
 } from 'react-native';
-import { Redirect } from 'expo-router';
+import { Redirect, useFocusEffect } from 'expo-router';
 import VideoListItem from "@/components/VideoListItem";
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import FeedTab from '@/components/GenericComponents/FeedTab';
@@ -26,10 +26,19 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeTab, setActiveTab] = useState(TABS.FOR_YOU);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [isScreenFocused, setIsScreenFocused] = useState(true); // 👈 ajout
 
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const { data: preferences, isLoading: prefsLoading } = useMyPreferences();
   const { videos, loading: videosLoading, error } = useCompatibleVideos();
+
+  // 👇 ajout : pause quand on quitte le tab, reprise quand on revient
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => setIsScreenFocused(false);
+    }, [])
+  );
 
   const onLayout = useCallback((e: any) => {
     setContainerHeight(e.nativeEvent.layout.height);
@@ -86,7 +95,7 @@ export default function HomeScreen() {
           renderItem={({ item, index }) => (
             <VideoListItem 
               videoItem={item} 
-              isActive={index === currentIndex} 
+              isActive={index === currentIndex && isScreenFocused} // 👈 ajout
               height={containerHeight}
             />
           )}
