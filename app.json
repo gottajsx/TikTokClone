@@ -32,12 +32,6 @@
       "expo-router",
       "expo-video",
       "expo-camera",
-      [
-        "expo-av",
-        {
-          "recordAudioAndroid": true
-        }
-      ],
       "@react-native-community/datetimepicker"
     ]
   }
